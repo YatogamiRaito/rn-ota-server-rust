@@ -1,0 +1,14 @@
+/target
+.env
+.env.local
+*.local
+
+.DS_Store
+
+logs/
+*.log
+
+node_modules/
+
+.vscode/
+.idea/

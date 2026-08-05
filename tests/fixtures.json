@@ -1,0 +1,4411 @@
+{
+  "hashString": [
+    {
+      "input": "",
+      "output": 0
+    },
+    {
+      "input": "hello",
+      "output": 99162322
+    },
+    {
+      "input": "mobile-business",
+      "output": -1531098997
+    },
+    {
+      "input": "mobile-field",
+      "output": 778617871
+    },
+    {
+      "input": "00000000-0000-0000-0000-000000000000:multiplier",
+      "output": 1856177467
+    },
+    {
+      "input": "00000000-0000-0000-0000-000000000000:offset",
+      "output": -687490803
+    },
+    {
+      "input": "12345678-1234-1234-1234-1234567890ab:multiplier",
+      "output": -2118149187
+    },
+    {
+      "input": "12345678-1234-1234-1234-1234567890ab:offset",
+      "output": -312090481
+    }
+  ],
+  "gcd": [
+    {
+      "a": 0,
+      "b": 10,
+      "output": 10
+    },
+    {
+      "a": 15,
+      "b": 5,
+      "output": 5
+    },
+    {
+      "a": 997,
+      "b": 1000,
+      "output": 1
+    },
+    {
+      "a": 1000,
+      "b": 1000,
+      "output": 1000
+    },
+    {
+      "a": 4,
+      "b": 1000,
+      "output": 4
+    },
+    {
+      "a": 5,
+      "b": 1000,
+      "output": 5
+    }
+  ],
+  "modularInverse": [
+    {
+      "value": 997,
+      "modulus": 1000,
+      "output": 333
+    },
+    {
+      "value": 3,
+      "modulus": 1000,
+      "output": 667
+    },
+    {
+      "value": 7,
+      "modulus": 1000,
+      "output": 143
+    },
+    {
+      "value": 387,
+      "modulus": 1000,
+      "output": 323
+    }
+  ],
+  "rolloutPosition": [
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohortValue": 1,
+      "output": 851
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohortValue": 2,
+      "output": 268
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohortValue": 50,
+      "output": 284
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohortValue": 100,
+      "output": 134
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohortValue": 500,
+      "output": 934
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohortValue": 999,
+      "output": 17
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohortValue": 1000,
+      "output": 434
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohortValue": 1,
+      "output": 423
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohortValue": 2,
+      "output": 6
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohortValue": 50,
+      "output": 990
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohortValue": 100,
+      "output": 140
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohortValue": 500,
+      "output": 340
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohortValue": 999,
+      "output": 257
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohortValue": 1000,
+      "output": 840
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohortValue": 1,
+      "output": 755
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohortValue": 2,
+      "output": 892
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohortValue": 50,
+      "output": 468
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohortValue": 100,
+      "output": 318
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohortValue": 500,
+      "output": 118
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohortValue": 999,
+      "output": 481
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohortValue": 1000,
+      "output": 618
+    }
+  ],
+  "eligibility": [
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": null,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": null,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": null,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 0,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 0,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 0,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 100,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 100,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 100,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 500,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 500,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 500,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 1000,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": null,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": null,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": null,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 0,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 0,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 0,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 100,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 100,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 100,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 500,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 500,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 500,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 1000,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "50",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": null,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": null,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": null,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 0,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 0,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 0,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 100,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 100,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 100,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 500,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 500,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 500,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 1000,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "500",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": null,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": null,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": null,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 0,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 0,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 0,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 100,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 100,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 100,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 500,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 500,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 500,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 1000,
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "999",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": null,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 0,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 100,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 500,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 1000,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": null,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 0,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 100,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 500,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 1000,
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": null,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": null,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": null,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 0,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 0,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 0,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 100,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 100,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 100,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 500,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 500,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 500,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 1000,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": null,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": null,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": null,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 0,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 0,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 0,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 100,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 100,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 100,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 500,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 500,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 500,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 1000,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "50",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": null,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": null,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": null,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 0,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 0,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 0,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 100,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 100,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 100,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 500,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 500,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 500,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 1000,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "500",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": null,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": null,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": null,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 0,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 0,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 0,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 100,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 100,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 100,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 500,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 500,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 500,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 1000,
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "999",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 0,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 100,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 500,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 1000,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 0,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 100,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 500,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 1000,
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "12345678-1234-1234-1234-1234567890ab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": null,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": null,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": null,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 0,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 0,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 0,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 100,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 100,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 100,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 500,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 500,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 500,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 1000,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": null,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": null,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": null,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 0,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 0,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 0,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 100,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 100,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 100,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 500,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 500,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 500,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 1000,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "50",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": null,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": null,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": null,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 0,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 0,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 0,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 100,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 100,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 100,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 500,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 500,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 500,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 1000,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "500",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": null,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": null,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": null,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 0,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 0,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 0,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 100,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 100,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 100,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 500,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 500,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 500,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": null,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 1000,
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": [],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "999",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": null,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 0,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 100,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 500,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 1000,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "custom-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": true
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": null,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": null,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 0,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 0,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 100,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 100,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 500,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 500,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": null,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 1000,
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": [],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["custom-cohort"],
+      "result": false
+    },
+    {
+      "bundleId": "abcdefab-cdef-abcd-efab-cdefabcdefab",
+      "cohort": "invalid-cohort",
+      "rolloutCohortCount": 1000,
+      "targetCohorts": ["50", "custom-cohort"],
+      "result": false
+    }
+  ]
+}

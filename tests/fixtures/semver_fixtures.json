@@ -1,0 +1,951 @@
+{
+  "satisfiesCases": [
+    {
+      "description": "exact match (bare version = exact)",
+      "currentVersion": "1.2.3",
+      "targetRange": "1.2.3",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "bare version does not match",
+      "currentVersion": "1.5.0",
+      "targetRange": "1.2.3",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "bare version - different major",
+      "currentVersion": "2.0.0",
+      "targetRange": "1.2.3",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "v-prefixed target version",
+      "currentVersion": "1.5.0",
+      "targetRange": "v1.5.0",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "empty range -> matches everything",
+      "currentVersion": "1.5.0",
+      "targetRange": "",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "whitespace-only range -> matches everything",
+      "currentVersion": "1.5.0",
+      "targetRange": "    ",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "* -> matches everything",
+      "currentVersion": "1.5.0",
+      "targetRange": "*",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "x -> matches everything",
+      "currentVersion": "1.5.0",
+      "targetRange": "x",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "X -> matches everything",
+      "currentVersion": "1.5.0",
+      "targetRange": "X",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "invalid range -> false",
+      "currentVersion": "1.5.0",
+      "targetRange": "not-a-version",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "invalid range (4 segments) -> false",
+      "currentVersion": "1.2.3",
+      "targetRange": "1.2.3.4",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "invalid range (x.y.z.w) -> false",
+      "currentVersion": "1.2.3",
+      "targetRange": "1.2.x.y",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": ">= full version equal",
+      "currentVersion": "1.2.3",
+      "targetRange": ">=1.2.3",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": ">= full version greater",
+      "currentVersion": "1.5.0",
+      "targetRange": ">=1.2.3",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": ">= full version smaller",
+      "currentVersion": "1.0.0",
+      "targetRange": ">=1.2.3",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "<= full version equal",
+      "currentVersion": "1.2.3",
+      "targetRange": "<=1.2.3",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "<= full version smaller",
+      "currentVersion": "1.0.0",
+      "targetRange": "<=1.2.3",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "<= full version greater",
+      "currentVersion": "1.5.0",
+      "targetRange": "<=1.2.3",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "> full version greater",
+      "currentVersion": "1.5.0",
+      "targetRange": ">1.2.3",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "> full version equal -> false",
+      "currentVersion": "1.2.3",
+      "targetRange": ">1.2.3",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "< full version smaller",
+      "currentVersion": "1.0.0",
+      "targetRange": "<1.2.3",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "< full version equal -> false",
+      "currentVersion": "1.2.3",
+      "targetRange": "<1.2.3",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": ">1.4 partial - false at the lower bound",
+      "currentVersion": "1.4.5",
+      "targetRange": ">1.4",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": ">1.4 partial - true above it",
+      "currentVersion": "1.5.0",
+      "targetRange": ">1.4",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "<1.6 partial - true below it",
+      "currentVersion": "1.5.9",
+      "targetRange": "<1.6",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "<1.6 partial - equal is false",
+      "currentVersion": "1.6.0",
+      "targetRange": "<1.6",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": ">=1.4 partial - equal is true",
+      "currentVersion": "1.4.0",
+      "targetRange": ">=1.4",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": ">=1.4 partial - false below it",
+      "currentVersion": "1.3.9",
+      "targetRange": ">=1.4",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": ">=1.4 partial - true above it",
+      "currentVersion": "1.4.5",
+      "targetRange": ">=1.4",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "<=1.2 partial - inside is true",
+      "currentVersion": "1.2.9",
+      "targetRange": "<=1.2",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "<=1.2 partial - outside is false",
+      "currentVersion": "1.3.0",
+      "targetRange": "<=1.2",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": ">1 partial (major only)",
+      "currentVersion": "2.0.0",
+      "targetRange": ">1",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": ">1 partial (major only) - false",
+      "currentVersion": "1.5.0",
+      "targetRange": ">1",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "<2 partial (major only)",
+      "currentVersion": "1.9.9",
+      "targetRange": "<2",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "<2 partial (major only) - false",
+      "currentVersion": "2.0.0",
+      "targetRange": "<2",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "1.2 bare partial - inside",
+      "currentVersion": "1.2.9",
+      "targetRange": "1.2",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "1.2 bare partial - outside",
+      "currentVersion": "1.5.0",
+      "targetRange": "1.2",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "1.2.x bare partial - inside",
+      "currentVersion": "1.2.9",
+      "targetRange": "1.2.x",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "1.x bare partial - inside",
+      "currentVersion": "1.9.9",
+      "targetRange": "1.x",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "1.x bare partial - outside",
+      "currentVersion": "2.0.0",
+      "targetRange": "1.x",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "1 bare partial (major) - inside",
+      "currentVersion": "1.9.9",
+      "targetRange": "1",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "1 bare partial (major) - outside",
+      "currentVersion": "2.0.0",
+      "targetRange": "1",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "1.2.* bare partial",
+      "currentVersion": "1.2.5",
+      "targetRange": "1.2.*",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "1.X bare partial",
+      "currentVersion": "1.9.0",
+      "targetRange": "1.X",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "^1.2.3 - inside",
+      "currentVersion": "1.5.0",
+      "targetRange": "^1.2.3",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "^1.2.3 - outside on a major bump",
+      "currentVersion": "2.0.0",
+      "targetRange": "^1.2.3",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "^1.2.3 - outside below it",
+      "currentVersion": "1.2.2",
+      "targetRange": "^1.2.3",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "^0.2.3 - inside (0.x minor pin)",
+      "currentVersion": "0.2.9",
+      "targetRange": "^0.2.3",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "^0.2.3 - outside on a minor bump",
+      "currentVersion": "0.3.0",
+      "targetRange": "^0.2.3",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "^0.0.3 - inside (0.0.x patch pin)",
+      "currentVersion": "0.0.3",
+      "targetRange": "^0.0.3",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "^0.0.3 - outside on a patch bump",
+      "currentVersion": "0.0.4",
+      "targetRange": "^0.0.3",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "^1.2.x - inside",
+      "currentVersion": "1.9.9",
+      "targetRange": "^1.2.x",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "^1.2.x - outside",
+      "currentVersion": "2.0.0",
+      "targetRange": "^1.2.x",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "^0.0.x - inside",
+      "currentVersion": "0.0.5",
+      "targetRange": "^0.0.x",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "^0.0.x - outside",
+      "currentVersion": "0.1.0",
+      "targetRange": "^0.0.x",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "^1.x - inside",
+      "currentVersion": "1.9.9",
+      "targetRange": "^1.x",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "^0.x - inside",
+      "currentVersion": "0.5.0",
+      "targetRange": "^0.x",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "^0.x - outside",
+      "currentVersion": "1.0.0",
+      "targetRange": "^0.x",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "^1 - major only",
+      "currentVersion": "1.9.9",
+      "targetRange": "^1",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "^1 - major only, outside",
+      "currentVersion": "2.0.0",
+      "targetRange": "^1",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "~1.2.3 - inside",
+      "currentVersion": "1.2.9",
+      "targetRange": "~1.2.3",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "~1.2.3 - outside",
+      "currentVersion": "1.3.0",
+      "targetRange": "~1.2.3",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "~1.2 - inside",
+      "currentVersion": "1.2.9",
+      "targetRange": "~1.2",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "~1.2 - outside",
+      "currentVersion": "1.3.0",
+      "targetRange": "~1.2",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "~1 - inside",
+      "currentVersion": "1.9.9",
+      "targetRange": "~1",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "~1 - outside",
+      "currentVersion": "2.0.0",
+      "targetRange": "~1",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "~0.2.3 - inside",
+      "currentVersion": "0.2.9",
+      "targetRange": "~0.2.3",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "~0.2 - inside",
+      "currentVersion": "0.2.9",
+      "targetRange": "~0.2",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "~0 - inside",
+      "currentVersion": "0.9.9",
+      "targetRange": "~0",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "~0 - outside",
+      "currentVersion": "1.0.0",
+      "targetRange": "~0",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": ">=1.0.0 <2.0.0 - inside",
+      "currentVersion": "1.5.0",
+      "targetRange": ">=1.0.0 <2.0.0",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": ">=1.0.0 <2.0.0 - outside",
+      "currentVersion": "2.0.0",
+      "targetRange": ">=1.0.0 <2.0.0",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": ">1.4 <1.6 - inside",
+      "currentVersion": "1.5.0",
+      "targetRange": ">1.4 <1.6",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": ">1.4 <1.6 - outside (lower)",
+      "currentVersion": "1.4.0",
+      "targetRange": ">1.4 <1.6",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "range with extra whitespace",
+      "currentVersion": "1.5.0",
+      "targetRange": "  >=1.0.0   <2.0.0  ",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "1.0.0 - 2.0.0 full - inside",
+      "currentVersion": "1.5.0",
+      "targetRange": "1.0.0 - 2.0.0",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "1.0.0 - 2.0.0 full - upper bound inclusive",
+      "currentVersion": "2.0.0",
+      "targetRange": "1.0.0 - 2.0.0",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "1.0.0 - 2.0.0 full - outside",
+      "currentVersion": "2.0.1",
+      "targetRange": "1.0.0 - 2.0.0",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "1.0 - 2.0 partial on both ends",
+      "currentVersion": "1.5.0",
+      "targetRange": "1.0 - 2.0",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "1.2.3 - 1.6 full lower, partial upper - inside",
+      "currentVersion": "1.5.0",
+      "targetRange": "1.2.3 - 1.6",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "1.2.3 - 1.6 full lower, partial upper - outside",
+      "currentVersion": "1.7.0",
+      "targetRange": "1.2.3 - 1.6",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "1.2 - 1.6.3 partial lower, full upper - inside",
+      "currentVersion": "1.5.0",
+      "targetRange": "1.2 - 1.6.3",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "1.2 - 1.6.3 partial lower, full upper - outside",
+      "currentVersion": "1.1.9",
+      "targetRange": "1.2 - 1.6.3",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "1.2.3 - 2.3 partial upper, README example - upper bound",
+      "currentVersion": "2.3.9",
+      "targetRange": "1.2.3 - 2.3",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "1.2.3 - 2.3 partial upper, README example - outside",
+      "currentVersion": "2.4.0",
+      "targetRange": "1.2.3 - 2.3",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "1.0.0||2.0.0 - no match",
+      "currentVersion": "1.5.0",
+      "targetRange": "1.0.0||2.0.0",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "1.0.0||2.0.0 - matches",
+      "currentVersion": "2.0.0",
+      "targetRange": "1.0.0||2.0.0",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "1.x||3.x - first group matches",
+      "currentVersion": "1.5.0",
+      "targetRange": "1.x||3.x",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "1.x||3.x - second group matches",
+      "currentVersion": "3.5.0",
+      "targetRange": "1.x||3.x",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "1.x||3.x - neither group matches",
+      "currentVersion": "2.5.0",
+      "targetRange": "1.x||3.x",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "currentVersion v-prefix coerce",
+      "currentVersion": "v1.5.0",
+      "targetRange": "^1.0.0",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "currentVersion major.minor only coerce",
+      "currentVersion": "1.5",
+      "targetRange": "^1.0.0",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "currentVersion major only coerce",
+      "currentVersion": "1",
+      "targetRange": "^1.0.0",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "currentVersion build-metadata coerce",
+      "currentVersion": "1.5.0+build.123",
+      "targetRange": "^1.0.0",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "currentVersion prerelease coerce (tag is dropped)",
+      "currentVersion": "1.5.0-beta.1",
+      "targetRange": "^1.0.0",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "currentVersion noisy prefix coerce",
+      "currentVersion": "app-version-1.5.0-final",
+      "targetRange": "^1.0.0",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "currentVersion cannot be parsed -> false",
+      "currentVersion": "not-a-version",
+      "targetRange": "^1.0.0",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "currentVersion empty -> false",
+      "currentVersion": "",
+      "targetRange": "^1.0.0",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "bare prerelease range - numerically equal but tagged -> false",
+      "currentVersion": "1.2.3",
+      "targetRange": "1.2.3-beta.1",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": ">= prerelease range - numerically equal -> true (release > prerelease)",
+      "currentVersion": "1.2.3",
+      "targetRange": ">=1.2.3-beta.1",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": ">= prerelease range - numerically below -> false",
+      "currentVersion": "1.2.2",
+      "targetRange": ">=1.2.3-beta.1",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "<= prerelease range - numerically equal -> false (release > prerelease)",
+      "currentVersion": "1.2.3",
+      "targetRange": "<=1.2.3-beta.1",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "prerelease-to-prerelease exact match",
+      "currentVersion": "1.5.0-beta.1",
+      "targetRange": "1.5.0-beta.1",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "realistic: production >=2.0.0",
+      "currentVersion": "2.3.1",
+      "targetRange": ">=2.0.0",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "realistic: production >=2.0.0, older version outside",
+      "currentVersion": "1.9.0",
+      "targetRange": ">=2.0.0",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "realistic: specific major ^3.0.0",
+      "currentVersion": "3.4.5",
+      "targetRange": "^3.0.0",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "realistic: specific minor ~2.1.0",
+      "currentVersion": "2.1.9",
+      "targetRange": "~2.1.0",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "realistic: hotfix with a range >=2.1.0 <2.2.0",
+      "currentVersion": "2.1.5",
+      "targetRange": ">=2.1.0 <2.2.0",
+      "expected": true,
+      "group": "common"
+    },
+    {
+      "description": "realistic: outside the hotfix range >=2.1.0 <2.2.0",
+      "currentVersion": "2.2.0",
+      "targetRange": ">=2.1.0 <2.2.0",
+      "expected": false,
+      "group": "common"
+    },
+    {
+      "description": "extremely long numeric component (16+ digits) overflow",
+      "currentVersion": "1.0.0",
+      "targetRange": ">=99999999999999999.1.1",
+      "expected": false,
+      "group": "known-limitation"
+    },
+    {
+      "description": "coerce: extremely long number (17 digits), unexpected truncation",
+      "currentVersion": "app-11111111111111111.1.1-final",
+      "targetRange": "*",
+      "expected": true,
+      "group": "known-limitation"
+    }
+  ],
+  "coerceCases": [
+    {
+      "description": "full version",
+      "input": "1.2.3",
+      "expected": "1.2.3",
+      "group": "common"
+    },
+    {
+      "description": "v-prefix",
+      "input": "v1.2.3",
+      "expected": "1.2.3",
+      "group": "common"
+    },
+    {
+      "description": "major.minor",
+      "input": "1.2",
+      "expected": "1.2.0",
+      "group": "common"
+    },
+    {
+      "description": "major only",
+      "input": "1",
+      "expected": "1.0.0",
+      "group": "common"
+    },
+    {
+      "description": "text prefix + version",
+      "input": "abc-1.2.3.4",
+      "expected": "1.2.3",
+      "group": "common"
+    },
+    {
+      "description": "extra segments are truncated",
+      "input": "1.2.3.4.5",
+      "expected": "1.2.3",
+      "group": "common"
+    },
+    {
+      "description": "leading/trailing whitespace",
+      "input": "  1.2.3  ",
+      "expected": "1.2.3",
+      "group": "common"
+    },
+    {
+      "description": "prerelease tag is dropped",
+      "input": "1.2.3-beta.1",
+      "expected": "1.2.3",
+      "group": "common"
+    },
+    {
+      "description": "build metadata is dropped",
+      "input": "1.2.3+build",
+      "expected": "1.2.3",
+      "group": "common"
+    },
+    {
+      "description": "empty string -> null",
+      "input": "",
+      "expected": null,
+      "group": "common"
+    },
+    {
+      "description": "whitespace only -> null",
+      "input": "   ",
+      "expected": null,
+      "group": "common"
+    },
+    {
+      "description": "no digits -> null",
+      "input": "abc",
+      "expected": null,
+      "group": "common"
+    },
+    {
+      "description": "x prefix + version",
+      "input": "x1.2.3",
+      "expected": "1.2.3",
+      "group": "common"
+    },
+    {
+      "description": "major.minor.patch with a single-digit zero that is not a leading zero",
+      "input": "0.1.2",
+      "expected": "0.1.2",
+      "group": "common"
+    },
+    {
+      "description": "leading zero: date-like version -> null",
+      "input": "2021.01.02",
+      "expected": null,
+      "group": "known-limitation"
+    },
+    {
+      "description": "leading zero: minor -> null",
+      "input": "2021.1.02",
+      "expected": null,
+      "group": "known-limitation"
+    },
+    {
+      "description": "leading zero: minor2 -> null",
+      "input": "1.02.3",
+      "expected": null,
+      "group": "known-limitation"
+    },
+    {
+      "description": "leading zero: major -> null",
+      "input": "01.2.3",
+      "expected": null,
+      "group": "known-limitation"
+    },
+    {
+      "description": "leading zero: patch -> null",
+      "input": "1.2.03",
+      "expected": null,
+      "group": "known-limitation"
+    },
+    {
+      "description": "leading zero: major.minor -> null",
+      "input": "2021.01",
+      "expected": null,
+      "group": "known-limitation"
+    },
+    {
+      "description": "leading zero: double zero -> null",
+      "input": "00.1.2",
+      "expected": null,
+      "group": "known-limitation"
+    },
+    {
+      "description": "leading zero: standalone -> null",
+      "input": "010",
+      "expected": null,
+      "group": "known-limitation"
+    },
+    {
+      "description": "leading zero: after a prefix -> null",
+      "input": "v01.2.3",
+      "expected": null,
+      "group": "known-limitation"
+    },
+    {
+      "description": "leading zero: after a text prefix -> null",
+      "input": "abc01.2.3",
+      "expected": null,
+      "group": "known-limitation"
+    },
+    {
+      "description": "16 digits at the limit -> valid",
+      "input": "1111111111111111.1.1",
+      "expected": "1111111111111111.1.1",
+      "group": "known-limitation"
+    },
+    {
+      "description": "17 digits -> node truncates unexpectedly",
+      "input": "11111111111111111.1.1",
+      "expected": "1.1.0",
+      "group": "known-limitation"
+    },
+    {
+      "description": "sixteen nines -> safe-integer overflow, null",
+      "input": "9999999999999999.1.1",
+      "expected": null,
+      "group": "known-limitation"
+    },
+    {
+      "description": "seventeen nines -> node truncates unexpectedly",
+      "input": "99999999999999999.1.1",
+      "expected": "1.1.0",
+      "group": "known-limitation"
+    }
+  ]
+}

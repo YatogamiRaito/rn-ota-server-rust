@@ -1,0 +1,597 @@
+[
+  {
+    "description": "fresh install receives the newest eligible bundle",
+    "strategy": "appVersion",
+    "bundles": [
+      {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "platform": "android",
+        "shouldForceUpdate": false,
+        "enabled": true,
+        "fileHash": "hash-00000000-0000-0000-0000-000000000001",
+        "storageUri": "s3://bucket/00000000-0000-0000-0000-000000000001/bundle.zip",
+        "gitCommitHash": null,
+        "message": null,
+        "channel": "production",
+        "targetAppVersion": "*",
+        "fingerprintHash": null,
+        "rolloutCohortCount": 1000,
+        "targetCohorts": null,
+        "manifestStorageUri": null,
+        "manifestFileHash": null,
+        "assetBaseStorageUri": null,
+        "patches": []
+      },
+      {
+        "id": "00000000-0000-0000-0000-000000000002",
+        "platform": "android",
+        "shouldForceUpdate": false,
+        "enabled": true,
+        "fileHash": "hash-00000000-0000-0000-0000-000000000002",
+        "storageUri": "s3://bucket/00000000-0000-0000-0000-000000000002/bundle.zip",
+        "gitCommitHash": null,
+        "message": null,
+        "channel": "production",
+        "targetAppVersion": "*",
+        "fingerprintHash": null,
+        "rolloutCohortCount": 1000,
+        "targetCohorts": null,
+        "manifestStorageUri": null,
+        "manifestFileHash": null,
+        "assetBaseStorageUri": null,
+        "patches": []
+      }
+    ],
+    "args": {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "minBundleId": "00000000-0000-0000-0000-000000000000"
+    },
+    "expected": {
+      "status": "UPDATE",
+      "id": "00000000-0000-0000-0000-000000000002",
+      "shouldForceUpdate": false
+    }
+  },
+  {
+    "description": "with rollout 0 a fresh install gets no update",
+    "strategy": "appVersion",
+    "bundles": [
+      {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "platform": "android",
+        "shouldForceUpdate": false,
+        "enabled": true,
+        "fileHash": "hash-00000000-0000-0000-0000-000000000001",
+        "storageUri": "s3://bucket/00000000-0000-0000-0000-000000000001/bundle.zip",
+        "gitCommitHash": null,
+        "message": null,
+        "channel": "production",
+        "targetAppVersion": "*",
+        "fingerprintHash": null,
+        "rolloutCohortCount": 0,
+        "targetCohorts": null,
+        "manifestStorageUri": null,
+        "manifestFileHash": null,
+        "assetBaseStorageUri": null,
+        "patches": []
+      }
+    ],
+    "args": {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "minBundleId": "00000000-0000-0000-0000-000000000000"
+    },
+    "expected": null
+  },
+  {
+    "description": "current bundle still eligible and no newer candidate -> no update",
+    "strategy": "appVersion",
+    "bundles": [
+      {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "platform": "android",
+        "shouldForceUpdate": false,
+        "enabled": true,
+        "fileHash": "hash-00000000-0000-0000-0000-000000000001",
+        "storageUri": "s3://bucket/00000000-0000-0000-0000-000000000001/bundle.zip",
+        "gitCommitHash": null,
+        "message": null,
+        "channel": "production",
+        "targetAppVersion": "*",
+        "fingerprintHash": null,
+        "rolloutCohortCount": 1000,
+        "targetCohorts": null,
+        "manifestStorageUri": null,
+        "manifestFileHash": null,
+        "assetBaseStorageUri": null,
+        "patches": []
+      }
+    ],
+    "args": {
+      "bundleId": "00000000-0000-0000-0000-000000000001",
+      "minBundleId": "00000000-0000-0000-0000-000000000000"
+    },
+    "expected": null
+  },
+  {
+    "description": "current bundle eligible but a newer candidate exists -> UPDATE",
+    "strategy": "appVersion",
+    "bundles": [
+      {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "platform": "android",
+        "shouldForceUpdate": false,
+        "enabled": true,
+        "fileHash": "hash-00000000-0000-0000-0000-000000000001",
+        "storageUri": "s3://bucket/00000000-0000-0000-0000-000000000001/bundle.zip",
+        "gitCommitHash": null,
+        "message": null,
+        "channel": "production",
+        "targetAppVersion": "*",
+        "fingerprintHash": null,
+        "rolloutCohortCount": 1000,
+        "targetCohorts": null,
+        "manifestStorageUri": null,
+        "manifestFileHash": null,
+        "assetBaseStorageUri": null,
+        "patches": []
+      },
+      {
+        "id": "00000000-0000-0000-0000-000000000002",
+        "platform": "android",
+        "shouldForceUpdate": false,
+        "enabled": true,
+        "fileHash": "hash-00000000-0000-0000-0000-000000000002",
+        "storageUri": "s3://bucket/00000000-0000-0000-0000-000000000002/bundle.zip",
+        "gitCommitHash": null,
+        "message": null,
+        "channel": "production",
+        "targetAppVersion": "*",
+        "fingerprintHash": null,
+        "rolloutCohortCount": 1000,
+        "targetCohorts": null,
+        "manifestStorageUri": null,
+        "manifestFileHash": null,
+        "assetBaseStorageUri": null,
+        "patches": []
+      }
+    ],
+    "args": {
+      "bundleId": "00000000-0000-0000-0000-000000000001",
+      "minBundleId": "00000000-0000-0000-0000-000000000000"
+    },
+    "expected": {
+      "status": "UPDATE",
+      "id": "00000000-0000-0000-0000-000000000002",
+      "shouldForceUpdate": false
+    }
+  },
+  {
+    "description": "current bundle fell out of the rollout but a newer eligible candidate exists -> UPDATE",
+    "strategy": "appVersion",
+    "bundles": [
+      {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "platform": "android",
+        "shouldForceUpdate": false,
+        "enabled": true,
+        "fileHash": "hash-00000000-0000-0000-0000-000000000001",
+        "storageUri": "s3://bucket/00000000-0000-0000-0000-000000000001/bundle.zip",
+        "gitCommitHash": null,
+        "message": null,
+        "channel": "production",
+        "targetAppVersion": "*",
+        "fingerprintHash": null,
+        "rolloutCohortCount": 0,
+        "targetCohorts": null,
+        "manifestStorageUri": null,
+        "manifestFileHash": null,
+        "assetBaseStorageUri": null,
+        "patches": []
+      },
+      {
+        "id": "00000000-0000-0000-0000-000000000002",
+        "platform": "android",
+        "shouldForceUpdate": false,
+        "enabled": true,
+        "fileHash": "hash-00000000-0000-0000-0000-000000000002",
+        "storageUri": "s3://bucket/00000000-0000-0000-0000-000000000002/bundle.zip",
+        "gitCommitHash": null,
+        "message": null,
+        "channel": "production",
+        "targetAppVersion": "*",
+        "fingerprintHash": null,
+        "rolloutCohortCount": 1000,
+        "targetCohorts": null,
+        "manifestStorageUri": null,
+        "manifestFileHash": null,
+        "assetBaseStorageUri": null,
+        "patches": []
+      }
+    ],
+    "args": {
+      "bundleId": "00000000-0000-0000-0000-000000000001",
+      "minBundleId": "00000000-0000-0000-0000-000000000000"
+    },
+    "expected": {
+      "status": "UPDATE",
+      "id": "00000000-0000-0000-0000-000000000002",
+      "shouldForceUpdate": false
+    }
+  },
+  {
+    "description": "current bundle fell out of the rollout, no newer candidate but an older eligible one exists -> ROLLBACK",
+    "strategy": "appVersion",
+    "bundles": [
+      {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "platform": "android",
+        "shouldForceUpdate": false,
+        "enabled": true,
+        "fileHash": "hash-00000000-0000-0000-0000-000000000001",
+        "storageUri": "s3://bucket/00000000-0000-0000-0000-000000000001/bundle.zip",
+        "gitCommitHash": null,
+        "message": null,
+        "channel": "production",
+        "targetAppVersion": "*",
+        "fingerprintHash": null,
+        "rolloutCohortCount": 1000,
+        "targetCohorts": null,
+        "manifestStorageUri": null,
+        "manifestFileHash": null,
+        "assetBaseStorageUri": null,
+        "patches": []
+      },
+      {
+        "id": "00000000-0000-0000-0000-000000000002",
+        "platform": "android",
+        "shouldForceUpdate": false,
+        "enabled": true,
+        "fileHash": "hash-00000000-0000-0000-0000-000000000002",
+        "storageUri": "s3://bucket/00000000-0000-0000-0000-000000000002/bundle.zip",
+        "gitCommitHash": null,
+        "message": null,
+        "channel": "production",
+        "targetAppVersion": "*",
+        "fingerprintHash": null,
+        "rolloutCohortCount": 0,
+        "targetCohorts": null,
+        "manifestStorageUri": null,
+        "manifestFileHash": null,
+        "assetBaseStorageUri": null,
+        "patches": []
+      }
+    ],
+    "args": {
+      "bundleId": "00000000-0000-0000-0000-000000000002",
+      "minBundleId": "00000000-0000-0000-0000-000000000000"
+    },
+    "expected": {
+      "status": "ROLLBACK",
+      "id": "00000000-0000-0000-0000-000000000001",
+      "shouldForceUpdate": true
+    }
+  },
+  {
+    "description": "current bundle fell out of the rollout, no eligible candidate at all, below minBundleId -> native rollback (INIT)",
+    "strategy": "appVersion",
+    "bundles": [
+      {
+        "id": "00000000-0000-0000-0000-000000000002",
+        "platform": "android",
+        "shouldForceUpdate": false,
+        "enabled": true,
+        "fileHash": "hash-00000000-0000-0000-0000-000000000002",
+        "storageUri": "s3://bucket/00000000-0000-0000-0000-000000000002/bundle.zip",
+        "gitCommitHash": null,
+        "message": null,
+        "channel": "production",
+        "targetAppVersion": "*",
+        "fingerprintHash": null,
+        "rolloutCohortCount": 0,
+        "targetCohorts": null,
+        "manifestStorageUri": null,
+        "manifestFileHash": null,
+        "assetBaseStorageUri": null,
+        "patches": []
+      }
+    ],
+    "args": {
+      "bundleId": "00000000-0000-0000-0000-000000000002",
+      "minBundleId": "00000000-0000-0000-0000-000000000000"
+    },
+    "expected": {
+      "status": "ROLLBACK",
+      "id": "00000000-0000-0000-0000-000000000000",
+      "shouldForceUpdate": true
+    }
+  },
+  {
+    "description": "current bundle is below minBundleId and there is no candidate -> no update",
+    "strategy": "appVersion",
+    "bundles": [
+      {
+        "id": "00000000-0000-0000-0000-000000000002",
+        "platform": "android",
+        "shouldForceUpdate": false,
+        "enabled": true,
+        "fileHash": "hash-00000000-0000-0000-0000-000000000002",
+        "storageUri": "s3://bucket/00000000-0000-0000-0000-000000000002/bundle.zip",
+        "gitCommitHash": null,
+        "message": null,
+        "channel": "production",
+        "targetAppVersion": "*",
+        "fingerprintHash": null,
+        "rolloutCohortCount": 0,
+        "targetCohorts": null,
+        "manifestStorageUri": null,
+        "manifestFileHash": null,
+        "assetBaseStorageUri": null,
+        "patches": []
+      }
+    ],
+    "args": {
+      "bundleId": "00000000-0000-0000-0000-000000000002",
+      "minBundleId": "00000000-0000-0000-0000-000000000002"
+    },
+    "expected": null
+  },
+  {
+    "description": "semver does not match -> candidate is filtered out, no update",
+    "strategy": "appVersion",
+    "bundles": [
+      {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "platform": "android",
+        "shouldForceUpdate": false,
+        "enabled": true,
+        "fileHash": "hash-00000000-0000-0000-0000-000000000001",
+        "storageUri": "s3://bucket/00000000-0000-0000-0000-000000000001/bundle.zip",
+        "gitCommitHash": null,
+        "message": null,
+        "channel": "production",
+        "targetAppVersion": ">=2.0.0",
+        "fingerprintHash": null,
+        "rolloutCohortCount": 1000,
+        "targetCohorts": null,
+        "manifestStorageUri": null,
+        "manifestFileHash": null,
+        "assetBaseStorageUri": null,
+        "patches": []
+      }
+    ],
+    "args": {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "minBundleId": "00000000-0000-0000-0000-000000000000",
+      "appVersion": "1.5.0"
+    },
+    "expected": null
+  },
+  {
+    "description": "explicit cohort target matches -> UPDATE",
+    "strategy": "appVersion",
+    "bundles": [
+      {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "platform": "android",
+        "shouldForceUpdate": false,
+        "enabled": true,
+        "fileHash": "hash-00000000-0000-0000-0000-000000000001",
+        "storageUri": "s3://bucket/00000000-0000-0000-0000-000000000001/bundle.zip",
+        "gitCommitHash": null,
+        "message": null,
+        "channel": "production",
+        "targetAppVersion": "*",
+        "fingerprintHash": null,
+        "rolloutCohortCount": 1000,
+        "targetCohorts": null,
+        "manifestStorageUri": null,
+        "manifestFileHash": null,
+        "assetBaseStorageUri": null,
+        "patches": []
+      },
+      {
+        "id": "00000000-0000-0000-0000-000000000002",
+        "platform": "android",
+        "shouldForceUpdate": false,
+        "enabled": true,
+        "fileHash": "hash-00000000-0000-0000-0000-000000000002",
+        "storageUri": "s3://bucket/00000000-0000-0000-0000-000000000002/bundle.zip",
+        "gitCommitHash": null,
+        "message": null,
+        "channel": "production",
+        "targetAppVersion": "*",
+        "fingerprintHash": null,
+        "rolloutCohortCount": 0,
+        "targetCohorts": ["beta-testers"],
+        "manifestStorageUri": null,
+        "manifestFileHash": null,
+        "assetBaseStorageUri": null,
+        "patches": []
+      }
+    ],
+    "args": {
+      "bundleId": "00000000-0000-0000-0000-000000000001",
+      "minBundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "beta-testers"
+    },
+    "expected": {
+      "status": "UPDATE",
+      "id": "00000000-0000-0000-0000-000000000002",
+      "shouldForceUpdate": false
+    }
+  },
+  {
+    "description": "numeric cohort with a partial rollout (500/1000)",
+    "strategy": "appVersion",
+    "bundles": [
+      {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "platform": "android",
+        "shouldForceUpdate": false,
+        "enabled": true,
+        "fileHash": "hash-00000000-0000-0000-0000-000000000001",
+        "storageUri": "s3://bucket/00000000-0000-0000-0000-000000000001/bundle.zip",
+        "gitCommitHash": null,
+        "message": null,
+        "channel": "production",
+        "targetAppVersion": "*",
+        "fingerprintHash": null,
+        "rolloutCohortCount": 1000,
+        "targetCohorts": null,
+        "manifestStorageUri": null,
+        "manifestFileHash": null,
+        "assetBaseStorageUri": null,
+        "patches": []
+      },
+      {
+        "id": "00000000-0000-0000-0000-000000000002",
+        "platform": "android",
+        "shouldForceUpdate": false,
+        "enabled": true,
+        "fileHash": "hash-00000000-0000-0000-0000-000000000002",
+        "storageUri": "s3://bucket/00000000-0000-0000-0000-000000000002/bundle.zip",
+        "gitCommitHash": null,
+        "message": null,
+        "channel": "production",
+        "targetAppVersion": "*",
+        "fingerprintHash": null,
+        "rolloutCohortCount": 500,
+        "targetCohorts": null,
+        "manifestStorageUri": null,
+        "manifestFileHash": null,
+        "assetBaseStorageUri": null,
+        "patches": []
+      }
+    ],
+    "args": {
+      "bundleId": "00000000-0000-0000-0000-000000000001",
+      "minBundleId": "00000000-0000-0000-0000-000000000000",
+      "cohort": "42"
+    },
+    "expected": {
+      "status": "UPDATE",
+      "id": "00000000-0000-0000-0000-000000000002",
+      "shouldForceUpdate": false
+    }
+  },
+  {
+    "description": "fresh install with a matching fingerprint -> UPDATE",
+    "strategy": "fingerprint",
+    "bundles": [
+      {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "platform": "android",
+        "shouldForceUpdate": false,
+        "enabled": true,
+        "fileHash": "hash-00000000-0000-0000-0000-000000000001",
+        "storageUri": "s3://bucket/00000000-0000-0000-0000-000000000001/bundle.zip",
+        "gitCommitHash": null,
+        "message": null,
+        "channel": "production",
+        "targetAppVersion": null,
+        "fingerprintHash": "fp-abc",
+        "rolloutCohortCount": 1000,
+        "targetCohorts": null,
+        "manifestStorageUri": null,
+        "manifestFileHash": null,
+        "assetBaseStorageUri": null,
+        "patches": []
+      }
+    ],
+    "args": {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "minBundleId": "00000000-0000-0000-0000-000000000000",
+      "fingerprintHash": "fp-abc"
+    },
+    "expected": {
+      "status": "UPDATE",
+      "id": "00000000-0000-0000-0000-000000000001",
+      "shouldForceUpdate": false
+    }
+  },
+  {
+    "description": "fingerprint does not match -> no update",
+    "strategy": "fingerprint",
+    "bundles": [
+      {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "platform": "android",
+        "shouldForceUpdate": false,
+        "enabled": true,
+        "fileHash": "hash-00000000-0000-0000-0000-000000000001",
+        "storageUri": "s3://bucket/00000000-0000-0000-0000-000000000001/bundle.zip",
+        "gitCommitHash": null,
+        "message": null,
+        "channel": "production",
+        "targetAppVersion": null,
+        "fingerprintHash": "fp-abc",
+        "rolloutCohortCount": 1000,
+        "targetCohorts": null,
+        "manifestStorageUri": null,
+        "manifestFileHash": null,
+        "assetBaseStorageUri": null,
+        "patches": []
+      }
+    ],
+    "args": {
+      "bundleId": "00000000-0000-0000-0000-000000000000",
+      "minBundleId": "00000000-0000-0000-0000-000000000000",
+      "fingerprintHash": "fp-xyz"
+    },
+    "expected": null
+  },
+  {
+    "description": "fingerprint: current bundle fell out of the rollout, an older eligible candidate exists -> ROLLBACK",
+    "strategy": "fingerprint",
+    "bundles": [
+      {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "platform": "android",
+        "shouldForceUpdate": false,
+        "enabled": true,
+        "fileHash": "hash-00000000-0000-0000-0000-000000000001",
+        "storageUri": "s3://bucket/00000000-0000-0000-0000-000000000001/bundle.zip",
+        "gitCommitHash": null,
+        "message": null,
+        "channel": "production",
+        "targetAppVersion": null,
+        "fingerprintHash": "fp-abc",
+        "rolloutCohortCount": 1000,
+        "targetCohorts": null,
+        "manifestStorageUri": null,
+        "manifestFileHash": null,
+        "assetBaseStorageUri": null,
+        "patches": []
+      },
+      {
+        "id": "00000000-0000-0000-0000-000000000002",
+        "platform": "android",
+        "shouldForceUpdate": false,
+        "enabled": true,
+        "fileHash": "hash-00000000-0000-0000-0000-000000000002",
+        "storageUri": "s3://bucket/00000000-0000-0000-0000-000000000002/bundle.zip",
+        "gitCommitHash": null,
+        "message": null,
+        "channel": "production",
+        "targetAppVersion": null,
+        "fingerprintHash": "fp-abc",
+        "rolloutCohortCount": 0,
+        "targetCohorts": null,
+        "manifestStorageUri": null,
+        "manifestFileHash": null,
+        "assetBaseStorageUri": null,
+        "patches": []
+      }
+    ],
+    "args": {
+      "bundleId": "00000000-0000-0000-0000-000000000002",
+      "minBundleId": "00000000-0000-0000-0000-000000000000",
+      "fingerprintHash": "fp-abc"
+    },
+    "expected": {
+      "status": "ROLLBACK",
+      "id": "00000000-0000-0000-0000-000000000001",
+      "shouldForceUpdate": true
+    }
+  }
+]

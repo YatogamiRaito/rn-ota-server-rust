@@ -1,0 +1,11 @@
+{
+  "name": "rn-ota-server-fixture-gen",
+  "private": true,
+  "type": "module",
+  "description": "Resolves the upstream hot-updater packages so the parity fixtures can be regenerated",
+  "dependencies": {
+    "@hot-updater/js": "0.35.8",
+    "@hot-updater/plugin-core": "0.35.8",
+    "semver": "^7.6.0"
+  }
+}
