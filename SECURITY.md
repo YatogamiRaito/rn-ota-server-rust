@@ -9,7 +9,7 @@ The latest released `1.x` version receives security fixes. Older tags do not.
 Please **do not** open a public issue for a security problem.
 
 Use GitHub's private reporting — *Security* → *Report a vulnerability* on
-[the repository](https://github.com/ebubekirkaraca/rn-ota-server-rust/security/advisories/new) —
+[the repository](https://github.com/YatogamiRaito/rn-ota-server-rust/security/advisories/new) —
 or email **ebubekirkaraca@aygyonetim.com**.
 
 Include what you can: affected version, a description of the impact, and reproduction steps. You

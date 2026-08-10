@@ -164,5 +164,5 @@ already applied successfully, so no `_sqlx_migrations` checksum is invalidated b
 - Update-decision and semver-range parity tests generated from the real `@hot-updater/js` and
   `semver` npm packages, verified against hot-updater 0.35.8.
 
-[Unreleased]: https://github.com/ebubekirkaraca/rn-ota-server-rust/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/ebubekirkaraca/rn-ota-server-rust/releases/tag/v1.0.0
+[Unreleased]: https://github.com/YatogamiRaito/rn-ota-server-rust/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/YatogamiRaito/rn-ota-server-rust/releases/tag/v1.0.0

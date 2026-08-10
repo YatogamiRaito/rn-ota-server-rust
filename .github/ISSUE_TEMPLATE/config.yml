@@ -4,5 +4,5 @@ contact_links:
     url: https://github.com/gronxb/hot-updater/issues
     about: This repository is only the server. Problems with the React Native SDK, the CLI or the protocol itself belong upstream.
   - name: Security vulnerability
-    url: https://github.com/ebubekirkaraca/rn-ota-server-rust/security/advisories/new
+    url: https://github.com/YatogamiRaito/rn-ota-server-rust/security/advisories/new
     about: Report privately — please do not open a public issue.

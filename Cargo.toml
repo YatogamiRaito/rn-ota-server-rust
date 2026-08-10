@@ -7,9 +7,9 @@ authors = ["Ebubekir Karaca"]
 description = "Self-hosted over-the-air update server for React Native apps (hot-updater compatible), written in Rust"
 license = "MIT"
 readme = "README.md"
-repository = "https://github.com/ebubekirkaraca/rn-ota-server-rust"
-homepage = "https://github.com/ebubekirkaraca/rn-ota-server-rust"
-documentation = "https://github.com/ebubekirkaraca/rn-ota-server-rust#readme"
+repository = "https://github.com/YatogamiRaito/rn-ota-server-rust"
+homepage = "https://github.com/YatogamiRaito/rn-ota-server-rust"
+documentation = "https://github.com/YatogamiRaito/rn-ota-server-rust#readme"
 keywords = ["react-native", "ota", "hot-updater", "codepush", "axum"]
 categories = ["web-programming::http-server", "development-tools"]
 # The migrations directory is embedded at compile time by sqlx::migrate!, so it

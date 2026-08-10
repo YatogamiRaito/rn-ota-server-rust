@@ -19,7 +19,7 @@ You need a recent stable Rust toolchain (1.94.1+, set by the AWS SDK). MySQL and
 suite — the parity tests are pure and synchronous.
 
 ```bash
-git clone https://github.com/ebubekirkaraca/rn-ota-server-rust.git
+git clone https://github.com/YatogamiRaito/rn-ota-server-rust.git
 cd rn-ota-server-rust
 cp .env.example .env
 cargo test

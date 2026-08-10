@@ -1,6 +1,6 @@
 # React Native OTA Server (Rust)
 
-[![CI](https://github.com/ebubekirkaraca/rn-ota-server-rust/actions/workflows/ci.yml/badge.svg)](https://github.com/ebubekirkaraca/rn-ota-server-rust/actions/workflows/ci.yml)
+[![CI](https://github.com/YatogamiRaito/rn-ota-server-rust/actions/workflows/ci.yml/badge.svg)](https://github.com/YatogamiRaito/rn-ota-server-rust/actions/workflows/ci.yml)
 [![crates.io](https://img.shields.io/crates/v/rn-ota-server-rust.svg)](https://crates.io/crates/rn-ota-server-rust)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -68,15 +68,15 @@ Pick whichever fits. All three give you the same `rn-ota-server-rust` binary.
 ### 1. Prebuilt binary (no toolchain needed)
 
 Grab the archive for your platform from the
-[latest release](https://github.com/ebubekirkaraca/rn-ota-server-rust/releases/latest) — Linux
+[latest release](https://github.com/YatogamiRaito/rn-ota-server-rust/releases/latest) — Linux
 (x86_64, aarch64), macOS (Intel, Apple Silicon) and Windows (x86_64) are published on every tag,
 each with a `.sha256` checksum file.
 
 ```bash
 VERSION=v1.0.0
 TARGET=x86_64-unknown-linux-gnu
-curl -LO "https://github.com/ebubekirkaraca/rn-ota-server-rust/releases/download/${VERSION}/rn-ota-server-rust-${VERSION}-${TARGET}.tar.gz"
-curl -LO "https://github.com/ebubekirkaraca/rn-ota-server-rust/releases/download/${VERSION}/rn-ota-server-rust-${VERSION}-${TARGET}.tar.gz.sha256"
+curl -LO "https://github.com/YatogamiRaito/rn-ota-server-rust/releases/download/${VERSION}/rn-ota-server-rust-${VERSION}-${TARGET}.tar.gz"
+curl -LO "https://github.com/YatogamiRaito/rn-ota-server-rust/releases/download/${VERSION}/rn-ota-server-rust-${VERSION}-${TARGET}.tar.gz.sha256"
 shasum -a 256 -c "rn-ota-server-rust-${VERSION}-${TARGET}.tar.gz.sha256"
 
 tar xzf "rn-ota-server-rust-${VERSION}-${TARGET}.tar.gz"
@@ -95,7 +95,7 @@ rn-ota-server-rust                 # reads .env from the working directory
 ### 3. Docker
 
 ```bash
-git clone https://github.com/ebubekirkaraca/rn-ota-server-rust.git
+git clone https://github.com/YatogamiRaito/rn-ota-server-rust.git
 cd rn-ota-server-rust
 cp .env.example .env               # fill in APPS and the per-app credentials
 docker compose up --build          # starts MySQL + the server
@@ -107,7 +107,7 @@ to fill in the app credentials in `.env`.
 ### 4. From source
 
 ```bash
-git clone https://github.com/ebubekirkaraca/rn-ota-server-rust.git
+git clone https://github.com/YatogamiRaito/rn-ota-server-rust.git
 cd rn-ota-server-rust
 cp .env.example .env
 cargo run --release
