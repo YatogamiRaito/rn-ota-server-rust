@@ -2,14 +2,33 @@
 name = "rn-ota-server-rust"
 version = "1.0.0"
 edition = "2021"
+rust-version = "1.94.1"  # dictated by the aws-smithy-* crates, not by this code
+authors = ["Ebubekir Karaca"]
 description = "Self-hosted over-the-air update server for React Native apps (hot-updater compatible), written in Rust"
 license = "MIT"
 readme = "README.md"
+repository = "https://github.com/ebubekirkaraca/rn-ota-server-rust"
+homepage = "https://github.com/ebubekirkaraca/rn-ota-server-rust"
+documentation = "https://github.com/ebubekirkaraca/rn-ota-server-rust#readme"
+keywords = ["react-native", "ota", "hot-updater", "codepush", "axum"]
+categories = ["web-programming::http-server", "development-tools"]
+# The migrations directory is embedded at compile time by sqlx::migrate!, so it
+# must ship inside the published crate. Everything else here is repo-only noise.
+include = [
+    "/src/**/*",
+    "/migrations/**/*",
+    "/Cargo.toml",
+    "/Cargo.lock",
+    "/README.md",
+    "/LICENSE",
+    "/CHANGELOG.md",
+    "/.env.example",
+]
 
 [dependencies]
-tokio = { version = "1.53", features = ["macros", "rt-multi-thread", "net"] }
+tokio = { version = "1.53", features = ["macros", "rt-multi-thread", "net", "signal"] }
 axum = { version = "0.8", features = ["macros"] }
-tower-http = { version = "0.7", features = ["trace", "cors"] }
+tower-http = { version = "0.7", features = ["trace", "cors", "request-id", "normalize-path"] }
 sqlx = { version = "0.8", features = ["runtime-tokio", "mysql", "chrono", "json", "tls-rustls-ring"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -26,10 +45,17 @@ anyhow = "1.0"
 axum-extra = { version = "0.12", features = ["typed-header"] }
 url = "2.5"
 rustls-webpki = "0.103.13"
+subtle = "2.6.1"
+tower_governor = "0.8.0"
+metrics = "0.24.6"
+metrics-exporter-prometheus = "0.18.3"
 
 [dev-dependencies]
+http-body-util = "0.1.4"
 reqwest = { version = "0.13", default-features = false, features = ["rustls"] }
 rustls-webpki = "0.103.13"
+testcontainers-modules = { version = "0.15.0", features = ["mysql"] }
+tower = { version = "0.5.3", features = ["util"] }
 
 # The AWS SDK + sqlx + rustls dependency tree produces enormous intermediate/object
 # files at full debug level (debug=2); the CI runner linker ran out of disk/memory
@@ -37,4 +63,13 @@ rustls-webpki = "0.103.13"
 # backtrace/panic location info while drastically shrinking the generated debug sections.
 [profile.dev]
 debug = "line-tables-only"
+
+# Distribution builds: a single small, fast binary. LTO + one codegen unit cost
+# build time, which only release/publish CI pays.
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+# panic is deliberately left at "unwind": a panic in one request handler must not
+# take the whole server process down.
 

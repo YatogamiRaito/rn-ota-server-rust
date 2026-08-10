@@ -2,6 +2,7 @@ pub mod cohort;
 pub mod config;
 pub mod db;
 pub mod models;
+pub mod observability;
 pub mod routes;
 pub mod semver;
 pub mod storage;

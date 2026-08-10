@@ -1,0 +1,4119 @@
+{
+  "paginationCases": [
+    {
+      "description": "total 0 short circuit",
+      "total": 0,
+      "limit": 50,
+      "offset": 0,
+      "expected": {
+        "total": 0,
+        "hasNextPage": false,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 0
+      }
+    },
+    {
+      "description": "total 0 with limit 1",
+      "total": 0,
+      "limit": 1,
+      "offset": 0,
+      "expected": {
+        "total": 0,
+        "hasNextPage": false,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 0
+      }
+    },
+    {
+      "description": "total 0 with an offset past the end",
+      "total": 0,
+      "limit": 50,
+      "offset": 100,
+      "expected": {
+        "total": 0,
+        "hasNextPage": false,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 0
+      }
+    },
+    {
+      "description": "total 0 with a huge offset",
+      "total": 0,
+      "limit": 10,
+      "offset": 999999,
+      "expected": {
+        "total": 0,
+        "hasNextPage": false,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 0
+      }
+    },
+    {
+      "description": "first page of 7 with limit 2",
+      "total": 7,
+      "limit": 2,
+      "offset": 0,
+      "expected": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 4
+      }
+    },
+    {
+      "description": "second page of 7 with limit 2",
+      "total": 7,
+      "limit": 2,
+      "offset": 2,
+      "expected": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": true,
+        "currentPage": 2,
+        "totalPages": 4
+      }
+    },
+    {
+      "description": "third page of 7 with limit 2",
+      "total": 7,
+      "limit": 2,
+      "offset": 4,
+      "expected": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": true,
+        "currentPage": 3,
+        "totalPages": 4
+      }
+    },
+    {
+      "description": "last page of 7 with limit 2",
+      "total": 7,
+      "limit": 2,
+      "offset": 6,
+      "expected": {
+        "total": 7,
+        "hasNextPage": false,
+        "hasPreviousPage": true,
+        "currentPage": 4,
+        "totalPages": 4
+      }
+    },
+    {
+      "description": "non-aligned offset 1 with limit 2",
+      "total": 7,
+      "limit": 2,
+      "offset": 1,
+      "expected": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": true,
+        "currentPage": 1,
+        "totalPages": 4
+      }
+    },
+    {
+      "description": "non-aligned offset 3 with limit 2",
+      "total": 7,
+      "limit": 2,
+      "offset": 3,
+      "expected": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": true,
+        "currentPage": 2,
+        "totalPages": 4
+      }
+    },
+    {
+      "description": "non-aligned offset 5 with limit 2",
+      "total": 7,
+      "limit": 2,
+      "offset": 5,
+      "expected": {
+        "total": 7,
+        "hasNextPage": false,
+        "hasPreviousPage": true,
+        "currentPage": 3,
+        "totalPages": 4
+      }
+    },
+    {
+      "description": "non-aligned offset 1 with limit 5",
+      "total": 7,
+      "limit": 5,
+      "offset": 1,
+      "expected": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": true,
+        "currentPage": 1,
+        "totalPages": 2
+      }
+    },
+    {
+      "description": "non-aligned offset 4 with limit 5",
+      "total": 7,
+      "limit": 5,
+      "offset": 4,
+      "expected": {
+        "total": 7,
+        "hasNextPage": false,
+        "hasPreviousPage": true,
+        "currentPage": 1,
+        "totalPages": 2
+      }
+    },
+    {
+      "description": "offset exactly equal to total",
+      "total": 7,
+      "limit": 2,
+      "offset": 7,
+      "expected": {
+        "total": 7,
+        "hasNextPage": false,
+        "hasPreviousPage": true,
+        "currentPage": 4,
+        "totalPages": 4
+      }
+    },
+    {
+      "description": "offset past the end",
+      "total": 7,
+      "limit": 2,
+      "offset": 10,
+      "expected": {
+        "total": 7,
+        "hasNextPage": false,
+        "hasPreviousPage": true,
+        "currentPage": 6,
+        "totalPages": 4
+      }
+    },
+    {
+      "description": "offset far past the end",
+      "total": 7,
+      "limit": 2,
+      "offset": 100,
+      "expected": {
+        "total": 7,
+        "hasNextPage": false,
+        "hasPreviousPage": true,
+        "currentPage": 51,
+        "totalPages": 4
+      }
+    },
+    {
+      "description": "limit 1 first row",
+      "total": 7,
+      "limit": 1,
+      "offset": 0,
+      "expected": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 7
+      }
+    },
+    {
+      "description": "limit 1 last row",
+      "total": 7,
+      "limit": 1,
+      "offset": 6,
+      "expected": {
+        "total": 7,
+        "hasNextPage": false,
+        "hasPreviousPage": true,
+        "currentPage": 7,
+        "totalPages": 7
+      }
+    },
+    {
+      "description": "limit 1 one past the last row",
+      "total": 7,
+      "limit": 1,
+      "offset": 7,
+      "expected": {
+        "total": 7,
+        "hasNextPage": false,
+        "hasPreviousPage": true,
+        "currentPage": 8,
+        "totalPages": 7
+      }
+    },
+    {
+      "description": "limit 100 with fewer rows than the limit",
+      "total": 7,
+      "limit": 100,
+      "offset": 0,
+      "expected": {
+        "total": 7,
+        "hasNextPage": false,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 1
+      }
+    },
+    {
+      "description": "limit 100 first page of 250",
+      "total": 250,
+      "limit": 100,
+      "offset": 0,
+      "expected": {
+        "total": 250,
+        "hasNextPage": true,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 3
+      }
+    },
+    {
+      "description": "limit 100 second page of 250",
+      "total": 250,
+      "limit": 100,
+      "offset": 100,
+      "expected": {
+        "total": 250,
+        "hasNextPage": true,
+        "hasPreviousPage": true,
+        "currentPage": 2,
+        "totalPages": 3
+      }
+    },
+    {
+      "description": "limit 100 last page of 250",
+      "total": 250,
+      "limit": 100,
+      "offset": 200,
+      "expected": {
+        "total": 250,
+        "hasNextPage": false,
+        "hasPreviousPage": true,
+        "currentPage": 3,
+        "totalPages": 3
+      }
+    },
+    {
+      "description": "hasNextPage boundary -- offset+limit equals total",
+      "total": 10,
+      "limit": 5,
+      "offset": 5,
+      "expected": {
+        "total": 10,
+        "hasNextPage": false,
+        "hasPreviousPage": true,
+        "currentPage": 2,
+        "totalPages": 2
+      }
+    },
+    {
+      "description": "hasNextPage boundary -- offset+limit one below total",
+      "total": 11,
+      "limit": 5,
+      "offset": 5,
+      "expected": {
+        "total": 11,
+        "hasNextPage": true,
+        "hasPreviousPage": true,
+        "currentPage": 2,
+        "totalPages": 3
+      }
+    },
+    {
+      "description": "hasNextPage boundary -- offset+limit one above total",
+      "total": 10,
+      "limit": 5,
+      "offset": 6,
+      "expected": {
+        "total": 10,
+        "hasNextPage": false,
+        "hasPreviousPage": true,
+        "currentPage": 2,
+        "totalPages": 2
+      }
+    },
+    {
+      "description": "hasNextPage true just below the boundary",
+      "total": 10,
+      "limit": 5,
+      "offset": 4,
+      "expected": {
+        "total": 10,
+        "hasNextPage": true,
+        "hasPreviousPage": true,
+        "currentPage": 1,
+        "totalPages": 2
+      }
+    },
+    {
+      "description": "hasPreviousPage boundary -- offset 0",
+      "total": 10,
+      "limit": 5,
+      "offset": 0,
+      "expected": {
+        "total": 10,
+        "hasNextPage": true,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 2
+      }
+    },
+    {
+      "description": "hasPreviousPage boundary -- offset 1",
+      "total": 10,
+      "limit": 5,
+      "offset": 1,
+      "expected": {
+        "total": 10,
+        "hasNextPage": true,
+        "hasPreviousPage": true,
+        "currentPage": 1,
+        "totalPages": 2
+      }
+    },
+    {
+      "description": "total is an exact multiple of limit -- first page",
+      "total": 100,
+      "limit": 50,
+      "offset": 0,
+      "expected": {
+        "total": 100,
+        "hasNextPage": true,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 2
+      }
+    },
+    {
+      "description": "total is an exact multiple of limit -- last page",
+      "total": 100,
+      "limit": 50,
+      "offset": 50,
+      "expected": {
+        "total": 100,
+        "hasNextPage": false,
+        "hasPreviousPage": true,
+        "currentPage": 2,
+        "totalPages": 2
+      }
+    },
+    {
+      "description": "total 1 with limit 1",
+      "total": 1,
+      "limit": 1,
+      "offset": 0,
+      "expected": {
+        "total": 1,
+        "hasNextPage": false,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 1
+      }
+    },
+    {
+      "description": "total 1 with limit 50",
+      "total": 1,
+      "limit": 50,
+      "offset": 0,
+      "expected": {
+        "total": 1,
+        "hasNextPage": false,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 1
+      }
+    },
+    {
+      "description": "total smaller than limit",
+      "total": 3,
+      "limit": 50,
+      "offset": 0,
+      "expected": {
+        "total": 3,
+        "hasNextPage": false,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 1
+      }
+    },
+    {
+      "description": "large total, last page",
+      "total": 1000000,
+      "limit": 50,
+      "offset": 999950,
+      "expected": {
+        "total": 1000000,
+        "hasNextPage": false,
+        "hasPreviousPage": true,
+        "currentPage": 20000,
+        "totalPages": 20000
+      }
+    }
+  ],
+  "cursorCases": [
+    {
+      "description": "no cursor, first page of 7",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 2,
+      "after": null,
+      "before": null,
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": null,
+        "ascending": false,
+        "reverseData": false
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 2,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7",
+            "b6"
+          ]
+        }
+      ],
+      "innerPageIds": [
+        "b7",
+        "b6"
+      ],
+      "startIndex": 0,
+      "data": [
+        "b7",
+        "b6"
+      ],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 4,
+        "nextCursor": "b6"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "nextCursor"
+      ]
+    },
+    {
+      "description": "no cursor, limit larger than the dataset",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 50,
+      "after": null,
+      "before": null,
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": null,
+        "ascending": false,
+        "reverseData": false
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 50,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7",
+            "b6",
+            "b5",
+            "b4",
+            "b3",
+            "b2",
+            "b1"
+          ]
+        }
+      ],
+      "innerPageIds": [
+        "b7",
+        "b6",
+        "b5",
+        "b4",
+        "b3",
+        "b2",
+        "b1"
+      ],
+      "startIndex": 0,
+      "data": [
+        "b7",
+        "b6",
+        "b5",
+        "b4",
+        "b3",
+        "b2",
+        "b1"
+      ],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": false,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 1
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages"
+      ]
+    },
+    {
+      "description": "no cursor, limit 1",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 1,
+      "after": null,
+      "before": null,
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": null,
+        "ascending": false,
+        "reverseData": false
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        }
+      ],
+      "innerPageIds": [
+        "b7"
+      ],
+      "startIndex": 0,
+      "data": [
+        "b7"
+      ],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 7,
+        "nextCursor": "b7"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "nextCursor"
+      ]
+    },
+    {
+      "description": "no cursor, single-row dataset",
+      "dataset": [
+        "b1"
+      ],
+      "limit": 2,
+      "after": null,
+      "before": null,
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": null,
+        "ascending": false,
+        "reverseData": false
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 1,
+          "returnedIds": [
+            "b1"
+          ]
+        },
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 2,
+          "offset": 0,
+          "returnedTotal": 1,
+          "returnedIds": [
+            "b1"
+          ]
+        }
+      ],
+      "innerPageIds": [
+        "b1"
+      ],
+      "startIndex": 0,
+      "data": [
+        "b1"
+      ],
+      "pagination": {
+        "total": 1,
+        "hasNextPage": false,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 1
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages"
+      ]
+    },
+    {
+      "description": "after the first row",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 2,
+      "after": "b7",
+      "before": null,
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": {
+          "op": "lt",
+          "value": "b7"
+        },
+        "ascending": false,
+        "reverseData": false
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "lt": "b7"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 2,
+          "offset": 0,
+          "returnedTotal": 6,
+          "returnedIds": [
+            "b6",
+            "b5"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "b6"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 1,
+          "returnedIds": [
+            "b7"
+          ]
+        }
+      ],
+      "innerPageIds": [
+        "b6",
+        "b5"
+      ],
+      "startIndex": 1,
+      "data": [
+        "b6",
+        "b5"
+      ],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": true,
+        "currentPage": 1,
+        "totalPages": 4,
+        "nextCursor": "b5",
+        "previousCursor": "b6"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "nextCursor",
+        "previousCursor"
+      ]
+    },
+    {
+      "description": "after a middle row",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 2,
+      "after": "b6",
+      "before": null,
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": {
+          "op": "lt",
+          "value": "b6"
+        },
+        "ascending": false,
+        "reverseData": false
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "lt": "b6"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 2,
+          "offset": 0,
+          "returnedTotal": 5,
+          "returnedIds": [
+            "b5",
+            "b4"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "b5"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 2,
+          "returnedIds": [
+            "b7"
+          ]
+        }
+      ],
+      "innerPageIds": [
+        "b5",
+        "b4"
+      ],
+      "startIndex": 2,
+      "data": [
+        "b5",
+        "b4"
+      ],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": true,
+        "currentPage": 2,
+        "totalPages": 4,
+        "nextCursor": "b4",
+        "previousCursor": "b5"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "nextCursor",
+        "previousCursor"
+      ]
+    },
+    {
+      "description": "after a middle row, deeper in",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 2,
+      "after": "b5",
+      "before": null,
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": {
+          "op": "lt",
+          "value": "b5"
+        },
+        "ascending": false,
+        "reverseData": false
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "lt": "b5"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 2,
+          "offset": 0,
+          "returnedTotal": 4,
+          "returnedIds": [
+            "b4",
+            "b3"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "b4"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 3,
+          "returnedIds": [
+            "b7"
+          ]
+        }
+      ],
+      "innerPageIds": [
+        "b4",
+        "b3"
+      ],
+      "startIndex": 3,
+      "data": [
+        "b4",
+        "b3"
+      ],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": true,
+        "currentPage": 2,
+        "totalPages": 4,
+        "nextCursor": "b3",
+        "previousCursor": "b4"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "nextCursor",
+        "previousCursor"
+      ]
+    },
+    {
+      "description": "after leaving a SHORT final page",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 2,
+      "after": "b2",
+      "before": null,
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": {
+          "op": "lt",
+          "value": "b2"
+        },
+        "ascending": false,
+        "reverseData": false
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "lt": "b2"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 2,
+          "offset": 0,
+          "returnedTotal": 1,
+          "returnedIds": [
+            "b1"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "b1"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 6,
+          "returnedIds": [
+            "b7"
+          ]
+        }
+      ],
+      "innerPageIds": [
+        "b1"
+      ],
+      "startIndex": 6,
+      "data": [
+        "b1"
+      ],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": false,
+        "hasPreviousPage": true,
+        "currentPage": 4,
+        "totalPages": 4,
+        "previousCursor": "b1"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "previousCursor"
+      ]
+    },
+    {
+      "description": "after leaving an exactly-full final page",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 3,
+      "after": "b4",
+      "before": null,
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": {
+          "op": "lt",
+          "value": "b4"
+        },
+        "ascending": false,
+        "reverseData": false
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "lt": "b4"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 3,
+          "offset": 0,
+          "returnedTotal": 3,
+          "returnedIds": [
+            "b3",
+            "b2",
+            "b1"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "b3"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 4,
+          "returnedIds": [
+            "b7"
+          ]
+        }
+      ],
+      "innerPageIds": [
+        "b3",
+        "b2",
+        "b1"
+      ],
+      "startIndex": 4,
+      "data": [
+        "b3",
+        "b2",
+        "b1"
+      ],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": false,
+        "hasPreviousPage": true,
+        "currentPage": 2,
+        "totalPages": 3,
+        "previousCursor": "b3"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "previousCursor"
+      ]
+    },
+    {
+      "description": "after with a full page and more to come",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 3,
+      "after": "b5",
+      "before": null,
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": {
+          "op": "lt",
+          "value": "b5"
+        },
+        "ascending": false,
+        "reverseData": false
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "lt": "b5"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 3,
+          "offset": 0,
+          "returnedTotal": 4,
+          "returnedIds": [
+            "b4",
+            "b3",
+            "b2"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "b4"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 3,
+          "returnedIds": [
+            "b7"
+          ]
+        }
+      ],
+      "innerPageIds": [
+        "b4",
+        "b3",
+        "b2"
+      ],
+      "startIndex": 3,
+      "data": [
+        "b4",
+        "b3",
+        "b2"
+      ],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": true,
+        "currentPage": 2,
+        "totalPages": 3,
+        "nextCursor": "b2",
+        "previousCursor": "b4"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "nextCursor",
+        "previousCursor"
+      ]
+    },
+    {
+      "description": "after the last row -> empty page, cursor echoed back",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 2,
+      "after": "b1",
+      "before": null,
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": {
+          "op": "lt",
+          "value": "b1"
+        },
+        "ascending": false,
+        "reverseData": false
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "lt": "b1"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 2,
+          "offset": 0,
+          "returnedTotal": 0,
+          "returnedIds": []
+        }
+      ],
+      "innerPageIds": [],
+      "startIndex": 7,
+      "data": [],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": false,
+        "hasPreviousPage": true,
+        "currentPage": 4,
+        "totalPages": 4,
+        "previousCursor": "b1"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "previousCursor"
+      ]
+    },
+    {
+      "description": "after on the single-row dataset -> empty",
+      "dataset": [
+        "b1"
+      ],
+      "limit": 2,
+      "after": "b1",
+      "before": null,
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": {
+          "op": "lt",
+          "value": "b1"
+        },
+        "ascending": false,
+        "reverseData": false
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 1,
+          "returnedIds": [
+            "b1"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "lt": "b1"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 2,
+          "offset": 0,
+          "returnedTotal": 0,
+          "returnedIds": []
+        }
+      ],
+      "innerPageIds": [],
+      "startIndex": 1,
+      "data": [],
+      "pagination": {
+        "total": 1,
+        "hasNextPage": false,
+        "hasPreviousPage": true,
+        "currentPage": 1,
+        "totalPages": 1,
+        "previousCursor": "b1"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "previousCursor"
+      ]
+    },
+    {
+      "description": "before a middle row",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 2,
+      "after": null,
+      "before": "b4",
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": {
+          "op": "gt",
+          "value": "b4"
+        },
+        "ascending": true,
+        "reverseData": true
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "b4"
+            }
+          },
+          "orderByDirection": "asc",
+          "limit": 2,
+          "offset": 0,
+          "returnedTotal": 3,
+          "returnedIds": [
+            "b5",
+            "b6"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "b6"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 1,
+          "returnedIds": [
+            "b7"
+          ]
+        }
+      ],
+      "innerPageIds": [
+        "b5",
+        "b6"
+      ],
+      "startIndex": 1,
+      "data": [
+        "b6",
+        "b5"
+      ],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": true,
+        "currentPage": 1,
+        "totalPages": 4,
+        "nextCursor": "b5",
+        "previousCursor": "b6"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "nextCursor",
+        "previousCursor"
+      ]
+    },
+    {
+      "description": "before a middle row, nearer the top",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 2,
+      "after": null,
+      "before": "b6",
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": {
+          "op": "gt",
+          "value": "b6"
+        },
+        "ascending": true,
+        "reverseData": true
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "b6"
+            }
+          },
+          "orderByDirection": "asc",
+          "limit": 2,
+          "offset": 0,
+          "returnedTotal": 1,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "b7"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 0,
+          "returnedIds": []
+        }
+      ],
+      "innerPageIds": [
+        "b7"
+      ],
+      "startIndex": 0,
+      "data": [
+        "b7"
+      ],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 4,
+        "nextCursor": "b7"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "nextCursor"
+      ]
+    },
+    {
+      "description": "before the last row",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 2,
+      "after": null,
+      "before": "b1",
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": {
+          "op": "gt",
+          "value": "b1"
+        },
+        "ascending": true,
+        "reverseData": true
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "b1"
+            }
+          },
+          "orderByDirection": "asc",
+          "limit": 2,
+          "offset": 0,
+          "returnedTotal": 6,
+          "returnedIds": [
+            "b2",
+            "b3"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "b3"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 4,
+          "returnedIds": [
+            "b7"
+          ]
+        }
+      ],
+      "innerPageIds": [
+        "b2",
+        "b3"
+      ],
+      "startIndex": 4,
+      "data": [
+        "b3",
+        "b2"
+      ],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": true,
+        "currentPage": 3,
+        "totalPages": 4,
+        "nextCursor": "b2",
+        "previousCursor": "b3"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "nextCursor",
+        "previousCursor"
+      ]
+    },
+    {
+      "description": "before the last row with limit 3",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 3,
+      "after": null,
+      "before": "b1",
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": {
+          "op": "gt",
+          "value": "b1"
+        },
+        "ascending": true,
+        "reverseData": true
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "b1"
+            }
+          },
+          "orderByDirection": "asc",
+          "limit": 3,
+          "offset": 0,
+          "returnedTotal": 6,
+          "returnedIds": [
+            "b2",
+            "b3",
+            "b4"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "b4"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 3,
+          "returnedIds": [
+            "b7"
+          ]
+        }
+      ],
+      "innerPageIds": [
+        "b2",
+        "b3",
+        "b4"
+      ],
+      "startIndex": 3,
+      "data": [
+        "b4",
+        "b3",
+        "b2"
+      ],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": true,
+        "currentPage": 2,
+        "totalPages": 3,
+        "nextCursor": "b2",
+        "previousCursor": "b4"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "nextCursor",
+        "previousCursor"
+      ]
+    },
+    {
+      "description": "before with a partial page available",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 3,
+      "after": null,
+      "before": "b5",
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": {
+          "op": "gt",
+          "value": "b5"
+        },
+        "ascending": true,
+        "reverseData": true
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "b5"
+            }
+          },
+          "orderByDirection": "asc",
+          "limit": 3,
+          "offset": 0,
+          "returnedTotal": 2,
+          "returnedIds": [
+            "b6",
+            "b7"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "b7"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 0,
+          "returnedIds": []
+        }
+      ],
+      "innerPageIds": [
+        "b6",
+        "b7"
+      ],
+      "startIndex": 0,
+      "data": [
+        "b7",
+        "b6"
+      ],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 3,
+        "nextCursor": "b6"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "nextCursor"
+      ]
+    },
+    {
+      "description": "before limit 1",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 1,
+      "after": null,
+      "before": "b4",
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": {
+          "op": "gt",
+          "value": "b4"
+        },
+        "ascending": true,
+        "reverseData": true
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "b4"
+            }
+          },
+          "orderByDirection": "asc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 3,
+          "returnedIds": [
+            "b5"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "b5"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 2,
+          "returnedIds": [
+            "b7"
+          ]
+        }
+      ],
+      "innerPageIds": [
+        "b5"
+      ],
+      "startIndex": 2,
+      "data": [
+        "b5"
+      ],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": true,
+        "currentPage": 3,
+        "totalPages": 7,
+        "nextCursor": "b5",
+        "previousCursor": "b5"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "nextCursor",
+        "previousCursor"
+      ]
+    },
+    {
+      "description": "before the first row -> empty page, cursor echoed back",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 2,
+      "after": null,
+      "before": "b7",
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": {
+          "op": "gt",
+          "value": "b7"
+        },
+        "ascending": true,
+        "reverseData": true
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "b7"
+            }
+          },
+          "orderByDirection": "asc",
+          "limit": 2,
+          "offset": 0,
+          "returnedTotal": 0,
+          "returnedIds": []
+        }
+      ],
+      "innerPageIds": [],
+      "startIndex": 0,
+      "data": [],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 4,
+        "nextCursor": "b7"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "nextCursor"
+      ]
+    },
+    {
+      "description": "before on the single-row dataset -> empty",
+      "dataset": [
+        "b1"
+      ],
+      "limit": 2,
+      "after": null,
+      "before": "b1",
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": {
+          "op": "gt",
+          "value": "b1"
+        },
+        "ascending": true,
+        "reverseData": true
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 1,
+          "returnedIds": [
+            "b1"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "b1"
+            }
+          },
+          "orderByDirection": "asc",
+          "limit": 2,
+          "offset": 0,
+          "returnedTotal": 0,
+          "returnedIds": []
+        }
+      ],
+      "innerPageIds": [],
+      "startIndex": 0,
+      "data": [],
+      "pagination": {
+        "total": 1,
+        "hasNextPage": false,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 1,
+        "nextCursor": "b1"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "nextCursor"
+      ]
+    },
+    {
+      "description": "after and before together -- after wins",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 2,
+      "after": "b6",
+      "before": "b2",
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": {
+          "op": "lt",
+          "value": "b6"
+        },
+        "ascending": false,
+        "reverseData": false
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "lt": "b6"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 2,
+          "offset": 0,
+          "returnedTotal": 5,
+          "returnedIds": [
+            "b5",
+            "b4"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "b5"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 2,
+          "returnedIds": [
+            "b7"
+          ]
+        }
+      ],
+      "innerPageIds": [
+        "b5",
+        "b4"
+      ],
+      "startIndex": 2,
+      "data": [
+        "b5",
+        "b4"
+      ],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": true,
+        "currentPage": 2,
+        "totalPages": 4,
+        "nextCursor": "b4",
+        "previousCursor": "b5"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "nextCursor",
+        "previousCursor"
+      ]
+    },
+    {
+      "description": "garbage after cursor sorting above every row",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 2,
+      "after": "ZZZZ",
+      "before": null,
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": {
+          "op": "lt",
+          "value": "ZZZZ"
+        },
+        "ascending": false,
+        "reverseData": false
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "lt": "ZZZZ"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 2,
+          "offset": 0,
+          "returnedTotal": 0,
+          "returnedIds": []
+        }
+      ],
+      "innerPageIds": [],
+      "startIndex": 7,
+      "data": [],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": false,
+        "hasPreviousPage": true,
+        "currentPage": 4,
+        "totalPages": 4,
+        "previousCursor": "ZZZZ"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "previousCursor"
+      ]
+    },
+    {
+      "description": "garbage after cursor sorting below every row",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 2,
+      "after": "c",
+      "before": null,
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": {
+          "op": "lt",
+          "value": "c"
+        },
+        "ascending": false,
+        "reverseData": false
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "lt": "c"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 2,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7",
+            "b6"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "b7"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 0,
+          "returnedIds": []
+        }
+      ],
+      "innerPageIds": [
+        "b7",
+        "b6"
+      ],
+      "startIndex": 0,
+      "data": [
+        "b7",
+        "b6"
+      ],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 4,
+        "nextCursor": "b6"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "nextCursor"
+      ]
+    },
+    {
+      "description": "garbage before cursor sorting below every row",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 2,
+      "after": null,
+      "before": "!!!!",
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": {
+          "op": "gt",
+          "value": "!!!!"
+        },
+        "ascending": true,
+        "reverseData": true
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "!!!!"
+            }
+          },
+          "orderByDirection": "asc",
+          "limit": 2,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b1",
+            "b2"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "b2"
+            }
+          },
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 5,
+          "returnedIds": [
+            "b7"
+          ]
+        }
+      ],
+      "innerPageIds": [
+        "b1",
+        "b2"
+      ],
+      "startIndex": 5,
+      "data": [
+        "b2",
+        "b1"
+      ],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": false,
+        "hasPreviousPage": true,
+        "currentPage": 3,
+        "totalPages": 4,
+        "previousCursor": "b2"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "previousCursor"
+      ]
+    },
+    {
+      "description": "garbage before cursor sorting above every row",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 2,
+      "after": null,
+      "before": "c",
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": {
+          "op": "gt",
+          "value": "c"
+        },
+        "ascending": true,
+        "reverseData": true
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {
+            "id": {
+              "gt": "c"
+            }
+          },
+          "orderByDirection": "asc",
+          "limit": 2,
+          "offset": 0,
+          "returnedTotal": 0,
+          "returnedIds": []
+        }
+      ],
+      "innerPageIds": [],
+      "startIndex": 0,
+      "data": [],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 4,
+        "nextCursor": "c"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "nextCursor"
+      ]
+    },
+    {
+      "description": "empty-string after cursor",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 2,
+      "after": "",
+      "before": null,
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": null,
+        "ascending": false,
+        "reverseData": false
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 2,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7",
+            "b6"
+          ]
+        }
+      ],
+      "innerPageIds": [
+        "b7",
+        "b6"
+      ],
+      "startIndex": 0,
+      "data": [
+        "b7",
+        "b6"
+      ],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 4,
+        "nextCursor": "b6"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "nextCursor"
+      ]
+    },
+    {
+      "description": "empty-string before cursor",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 2,
+      "after": null,
+      "before": "",
+      "page": null,
+      "usesPageBranch": false,
+      "cursorPlan": {
+        "idFilter": null,
+        "ascending": false,
+        "reverseData": false
+      },
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 1,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7"
+          ]
+        },
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 2,
+          "offset": 0,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b7",
+            "b6"
+          ]
+        }
+      ],
+      "innerPageIds": [
+        "b7",
+        "b6"
+      ],
+      "startIndex": 0,
+      "data": [
+        "b7",
+        "b6"
+      ],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": false,
+        "currentPage": 1,
+        "totalPages": 4,
+        "nextCursor": "b6"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "nextCursor"
+      ]
+    },
+    {
+      "description": "page 2 supplied together with a before cursor -- cursor ignored",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 2,
+      "after": null,
+      "before": "b4",
+      "page": 2,
+      "usesPageBranch": true,
+      "cursorPlan": null,
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 2,
+          "offset": 2,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b5",
+            "b4"
+          ]
+        }
+      ],
+      "innerPageIds": null,
+      "startIndex": 2,
+      "data": [
+        "b5",
+        "b4"
+      ],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": true,
+        "currentPage": 2,
+        "totalPages": 4,
+        "nextCursor": "b4",
+        "previousCursor": "b5"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "nextCursor",
+        "previousCursor"
+      ]
+    },
+    {
+      "description": "page 2 supplied together with an after cursor -- cursor ignored",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 2,
+      "after": "b4",
+      "before": null,
+      "page": 2,
+      "usesPageBranch": true,
+      "cursorPlan": null,
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 2,
+          "offset": 2,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b5",
+            "b4"
+          ]
+        }
+      ],
+      "innerPageIds": null,
+      "startIndex": 2,
+      "data": [
+        "b5",
+        "b4"
+      ],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": true,
+        "hasPreviousPage": true,
+        "currentPage": 2,
+        "totalPages": 4,
+        "nextCursor": "b4",
+        "previousCursor": "b5"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "nextCursor",
+        "previousCursor"
+      ]
+    },
+    {
+      "description": "page past the end is clamped to the last page",
+      "dataset": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ],
+      "limit": 2,
+      "after": null,
+      "before": null,
+      "page": 99,
+      "usesPageBranch": true,
+      "cursorPlan": null,
+      "innerCalls": [
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 2,
+          "offset": 196,
+          "returnedTotal": 7,
+          "returnedIds": []
+        },
+        {
+          "where": {},
+          "orderByDirection": "desc",
+          "limit": 2,
+          "offset": 6,
+          "returnedTotal": 7,
+          "returnedIds": [
+            "b1"
+          ]
+        }
+      ],
+      "innerPageIds": null,
+      "startIndex": 6,
+      "data": [
+        "b1"
+      ],
+      "pagination": {
+        "total": 7,
+        "hasNextPage": false,
+        "hasPreviousPage": true,
+        "currentPage": 4,
+        "totalPages": 4,
+        "previousCursor": "b1"
+      },
+      "paginationKeys": [
+        "total",
+        "hasNextPage",
+        "hasPreviousPage",
+        "currentPage",
+        "totalPages",
+        "previousCursor"
+      ]
+    }
+  ],
+  "limitParamCases": [
+    {
+      "description": "absent -> the default",
+      "key": "limit",
+      "raw": null,
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": 50
+      }
+    },
+    {
+      "description": "an ordinary value",
+      "key": "limit",
+      "raw": "10",
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": 10
+      }
+    },
+    {
+      "description": "the minimum accepted value",
+      "key": "limit",
+      "raw": "1",
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": 1
+      }
+    },
+    {
+      "description": "the maximum accepted value",
+      "key": "limit",
+      "raw": "100",
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": 100
+      }
+    },
+    {
+      "description": "zero is rejected",
+      "key": "limit",
+      "raw": "0",
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 400,
+      "expected": {
+        "ok": false,
+        "message": "The 'limit' query parameter must be a positive integer between 1 and 100."
+      }
+    },
+    {
+      "description": "negative is rejected",
+      "key": "limit",
+      "raw": "-5",
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 400,
+      "expected": {
+        "ok": false,
+        "message": "The 'limit' query parameter must be a positive integer between 1 and 100."
+      }
+    },
+    {
+      "description": "one above the maximum is rejected",
+      "key": "limit",
+      "raw": "101",
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 400,
+      "expected": {
+        "ok": false,
+        "message": "The 'limit' query parameter must be a positive integer between 1 and 100."
+      }
+    },
+    {
+      "description": "far above the maximum is rejected",
+      "key": "limit",
+      "raw": "1000",
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 400,
+      "expected": {
+        "ok": false,
+        "message": "The 'limit' query parameter must be a positive integer between 1 and 100."
+      }
+    },
+    {
+      "description": "a fractional value is rejected",
+      "key": "limit",
+      "raw": "1.5",
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 400,
+      "expected": {
+        "ok": false,
+        "message": "The 'limit' query parameter must be a positive integer between 1 and 100."
+      }
+    },
+    {
+      "description": "a non-numeric value is rejected",
+      "key": "limit",
+      "raw": "abc",
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 400,
+      "expected": {
+        "ok": false,
+        "message": "The 'limit' query parameter must be a positive integer between 1 and 100."
+      }
+    },
+    {
+      "description": "the empty string is rejected (Number(\"\") is 0)",
+      "key": "limit",
+      "raw": "",
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 400,
+      "expected": {
+        "ok": false,
+        "message": "The 'limit' query parameter must be a positive integer between 1 and 100."
+      }
+    },
+    {
+      "description": "whitespace only is rejected (Number(\"  \") is 0)",
+      "key": "limit",
+      "raw": "  ",
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 400,
+      "expected": {
+        "ok": false,
+        "message": "The 'limit' query parameter must be a positive integer between 1 and 100."
+      }
+    },
+    {
+      "description": "a leading plus is ACCEPTED (Number(\"+5\") is 5)",
+      "key": "limit",
+      "raw": "+5",
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": 5
+      }
+    },
+    {
+      "description": "exponent notation is ACCEPTED (Number(\"1e2\") is 100)",
+      "key": "limit",
+      "raw": "1e2",
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": 100
+      }
+    },
+    {
+      "description": "hexadecimal is ACCEPTED (Number(\"0x10\") is 16)",
+      "key": "limit",
+      "raw": "0x10",
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": 16
+      }
+    },
+    {
+      "description": "a trailing .0 is ACCEPTED (Number(\"50.0\") is 50)",
+      "key": "limit",
+      "raw": "50.0",
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": 50
+      }
+    },
+    {
+      "description": "surrounding whitespace is ACCEPTED (Number(\" 7 \") is 7)",
+      "key": "limit",
+      "raw": " 7 ",
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": 7
+      }
+    },
+    {
+      "description": "leading zeroes are ACCEPTED (Number(\"007\") is 7)",
+      "key": "limit",
+      "raw": "007",
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": 7
+      }
+    },
+    {
+      "description": "a number beyond the safe-integer range is rejected",
+      "key": "limit",
+      "raw": "99999999999999999999",
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 400,
+      "expected": {
+        "ok": false,
+        "message": "The 'limit' query parameter must be a positive integer between 1 and 100."
+      }
+    },
+    {
+      "description": "Infinity is rejected (not an integer)",
+      "key": "limit",
+      "raw": "Infinity",
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 400,
+      "expected": {
+        "ok": false,
+        "message": "The 'limit' query parameter must be a positive integer between 1 and 100."
+      }
+    },
+    {
+      "description": "NaN is rejected",
+      "key": "limit",
+      "raw": "NaN",
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 400,
+      "expected": {
+        "ok": false,
+        "message": "The 'limit' query parameter must be a positive integer between 1 and 100."
+      }
+    },
+    {
+      "description": "negative zero is rejected",
+      "key": "limit",
+      "raw": "-0",
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 400,
+      "expected": {
+        "ok": false,
+        "message": "The 'limit' query parameter must be a positive integer between 1 and 100."
+      }
+    },
+    {
+      "description": "a numeric separator is rejected (Number(\"1_000\") is NaN)",
+      "key": "limit",
+      "raw": "1_000",
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 400,
+      "expected": {
+        "ok": false,
+        "message": "The 'limit' query parameter must be a positive integer between 1 and 100."
+      }
+    },
+    {
+      "description": "a trailing unit is rejected",
+      "key": "limit",
+      "raw": "10px",
+      "defaultValue": 50,
+      "maxValue": 100,
+      "status": 400,
+      "expected": {
+        "ok": false,
+        "message": "The 'limit' query parameter must be a positive integer between 1 and 100."
+      }
+    }
+  ],
+  "pageParamCases": [
+    {
+      "description": "absent -> no page (cursor pagination applies)",
+      "raw": null,
+      "status": 200,
+      "beyondI64": false,
+      "expected": {
+        "ok": true,
+        "value": null
+      }
+    },
+    {
+      "description": "page 1",
+      "raw": "1",
+      "status": 200,
+      "beyondI64": false,
+      "expected": {
+        "ok": true,
+        "value": 1
+      }
+    },
+    {
+      "description": "page 2",
+      "raw": "2",
+      "status": 200,
+      "beyondI64": false,
+      "expected": {
+        "ok": true,
+        "value": 2
+      }
+    },
+    {
+      "description": "page 50",
+      "raw": "50",
+      "status": 200,
+      "beyondI64": false,
+      "expected": {
+        "ok": true,
+        "value": 50
+      }
+    },
+    {
+      "description": "page 101 is ACCEPTED -- page has no upper bound, unlike limit",
+      "raw": "101",
+      "status": 200,
+      "beyondI64": false,
+      "expected": {
+        "ok": true,
+        "value": 101
+      }
+    },
+    {
+      "description": "page 1000000 is accepted",
+      "raw": "1000000",
+      "status": 200,
+      "beyondI64": false,
+      "expected": {
+        "ok": true,
+        "value": 1000000
+      }
+    },
+    {
+      "description": "the largest exactly representable page (2^53-1)",
+      "raw": "9007199254740991",
+      "status": 200,
+      "beyondI64": false,
+      "expected": {
+        "ok": true,
+        "value": 9007199254740991
+      }
+    },
+    {
+      "description": "zero is rejected",
+      "raw": "0",
+      "status": 400,
+      "beyondI64": false,
+      "expected": {
+        "ok": false,
+        "message": "The 'page' query parameter must be a positive integer."
+      }
+    },
+    {
+      "description": "negative is rejected",
+      "raw": "-1",
+      "status": 400,
+      "beyondI64": false,
+      "expected": {
+        "ok": false,
+        "message": "The 'page' query parameter must be a positive integer."
+      }
+    },
+    {
+      "description": "a fractional value is rejected",
+      "raw": "1.5",
+      "status": 400,
+      "beyondI64": false,
+      "expected": {
+        "ok": false,
+        "message": "The 'page' query parameter must be a positive integer."
+      }
+    },
+    {
+      "description": "a non-numeric value is rejected",
+      "raw": "abc",
+      "status": 400,
+      "beyondI64": false,
+      "expected": {
+        "ok": false,
+        "message": "The 'page' query parameter must be a positive integer."
+      }
+    },
+    {
+      "description": "the empty string is rejected",
+      "raw": "",
+      "status": 400,
+      "beyondI64": false,
+      "expected": {
+        "ok": false,
+        "message": "The 'page' query parameter must be a positive integer."
+      }
+    },
+    {
+      "description": "whitespace only is rejected",
+      "raw": "  ",
+      "status": 400,
+      "beyondI64": false,
+      "expected": {
+        "ok": false,
+        "message": "The 'page' query parameter must be a positive integer."
+      }
+    },
+    {
+      "description": "Infinity is rejected (not an integer)",
+      "raw": "Infinity",
+      "status": 400,
+      "beyondI64": false,
+      "expected": {
+        "ok": false,
+        "message": "The 'page' query parameter must be a positive integer."
+      }
+    },
+    {
+      "description": "NaN is rejected",
+      "raw": "NaN",
+      "status": 400,
+      "beyondI64": false,
+      "expected": {
+        "ok": false,
+        "message": "The 'page' query parameter must be a positive integer."
+      }
+    },
+    {
+      "description": "negative zero is rejected",
+      "raw": "-0",
+      "status": 400,
+      "beyondI64": false,
+      "expected": {
+        "ok": false,
+        "message": "The 'page' query parameter must be a positive integer."
+      }
+    },
+    {
+      "description": "a leading plus is ACCEPTED",
+      "raw": "+5",
+      "status": 200,
+      "beyondI64": false,
+      "expected": {
+        "ok": true,
+        "value": 5
+      }
+    },
+    {
+      "description": "exponent notation is ACCEPTED",
+      "raw": "1e2",
+      "status": 200,
+      "beyondI64": false,
+      "expected": {
+        "ok": true,
+        "value": 100
+      }
+    },
+    {
+      "description": "hexadecimal is ACCEPTED",
+      "raw": "0x10",
+      "status": 200,
+      "beyondI64": false,
+      "expected": {
+        "ok": true,
+        "value": 16
+      }
+    },
+    {
+      "description": "leading zeroes are ACCEPTED",
+      "raw": "007",
+      "status": 200,
+      "beyondI64": false,
+      "expected": {
+        "ok": true,
+        "value": 7
+      }
+    },
+    {
+      "description": "surrounding whitespace is ACCEPTED",
+      "raw": " 7 ",
+      "status": 200,
+      "beyondI64": false,
+      "expected": {
+        "ok": true,
+        "value": 7
+      }
+    },
+    {
+      "description": "a value beyond i64 is ACCEPTED (accept/reject only)",
+      "raw": "99999999999999999999",
+      "status": 200,
+      "beyondI64": true,
+      "expected": {
+        "ok": true,
+        "value": null
+      }
+    },
+    {
+      "description": "an enormous exponent is ACCEPTED (accept/reject only)",
+      "raw": "1e30",
+      "status": 200,
+      "beyondI64": true,
+      "expected": {
+        "ok": true,
+        "value": null
+      }
+    }
+  ],
+  "platformParamCases": [
+    {
+      "description": "absent -> no platform filter",
+      "raw": null,
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": null
+      }
+    },
+    {
+      "description": "ios",
+      "raw": "ios",
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": "ios"
+      }
+    },
+    {
+      "description": "android",
+      "raw": "android",
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": "android"
+      }
+    },
+    {
+      "description": "uppercase is rejected",
+      "raw": "IOS",
+      "status": 400,
+      "expected": {
+        "ok": false,
+        "message": "Invalid platform: IOS. Expected 'ios' or 'android'."
+      }
+    },
+    {
+      "description": "mixed case is rejected",
+      "raw": "Android",
+      "status": 400,
+      "expected": {
+        "ok": false,
+        "message": "Invalid platform: Android. Expected 'ios' or 'android'."
+      }
+    },
+    {
+      "description": "an unknown platform is rejected",
+      "raw": "web",
+      "status": 400,
+      "expected": {
+        "ok": false,
+        "message": "Invalid platform: web. Expected 'ios' or 'android'."
+      }
+    },
+    {
+      "description": "the empty string is rejected",
+      "raw": "",
+      "status": 400,
+      "expected": {
+        "ok": false,
+        "message": "Invalid platform: . Expected 'ios' or 'android'."
+      }
+    },
+    {
+      "description": "surrounding whitespace is rejected",
+      "raw": " ios ",
+      "status": 400,
+      "expected": {
+        "ok": false,
+        "message": "Invalid platform:  ios . Expected 'ios' or 'android'."
+      }
+    },
+    {
+      "description": "a comma-separated pair is rejected",
+      "raw": "ios,android",
+      "status": 400,
+      "expected": {
+        "ok": false,
+        "message": "Invalid platform: ios,android. Expected 'ios' or 'android'."
+      }
+    },
+    {
+      "description": "a near miss is rejected",
+      "raw": "iOS",
+      "status": 400,
+      "expected": {
+        "ok": false,
+        "message": "Invalid platform: iOS. Expected 'ios' or 'android'."
+      }
+    }
+  ],
+  "stringArrayParamCases": [
+    {
+      "description": "idIn absent -> no filter",
+      "key": "idIn",
+      "query": "",
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": null
+      }
+    },
+    {
+      "description": "idIn once",
+      "key": "idIn",
+      "query": "?idIn=a",
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": [
+          "a"
+        ]
+      }
+    },
+    {
+      "description": "idIn twice -> two ids",
+      "key": "idIn",
+      "query": "?idIn=a&idIn=b",
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": [
+          "a",
+          "b"
+        ]
+      }
+    },
+    {
+      "description": "idIn three times -> three ids",
+      "key": "idIn",
+      "query": "?idIn=a&idIn=b&idIn=c",
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": [
+          "a",
+          "b",
+          "c"
+        ]
+      }
+    },
+    {
+      "description": "idIn with a comma -> ONE id containing a literal comma, not two ids",
+      "key": "idIn",
+      "query": "?idIn=a,b",
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": [
+          "a,b"
+        ]
+      }
+    },
+    {
+      "description": "idIn with a percent-encoded comma -> identical to the raw comma",
+      "key": "idIn",
+      "query": "?idIn=a%2Cb",
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": [
+          "a,b"
+        ]
+      }
+    },
+    {
+      "description": "idIn empty value -> a one-element array holding \"\"",
+      "key": "idIn",
+      "query": "?idIn=",
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": [
+          ""
+        ]
+      }
+    },
+    {
+      "description": "idIn with one real and one empty value",
+      "key": "idIn",
+      "query": "?idIn=a&idIn=",
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": [
+          "a",
+          ""
+        ]
+      }
+    },
+    {
+      "description": "idIn repeated with the same value -> duplicates kept",
+      "key": "idIn",
+      "query": "?idIn=a&idIn=a",
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": [
+          "a",
+          "a"
+        ]
+      }
+    },
+    {
+      "description": "idIn order is preserved as supplied",
+      "key": "idIn",
+      "query": "?idIn=c&idIn=a&idIn=b",
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": [
+          "c",
+          "a",
+          "b"
+        ]
+      }
+    },
+    {
+      "description": "idIn alongside idEq -> both survive",
+      "key": "idIn",
+      "query": "?idEq=z&idIn=a&idIn=b",
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": [
+          "a",
+          "b"
+        ]
+      }
+    },
+    {
+      "description": "idIn with a uuid-shaped comma-separated pair -> still one value",
+      "key": "idIn",
+      "query": "?idIn=00000000-0000-0000-0000-000000000001,00000000-0000-0000-0000-000000000002",
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": [
+          "00000000-0000-0000-0000-000000000001,00000000-0000-0000-0000-000000000002"
+        ]
+      }
+    },
+    {
+      "description": "targetAppVersionIn absent -> no filter",
+      "key": "targetAppVersionIn",
+      "query": "",
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": null
+      }
+    },
+    {
+      "description": "targetAppVersionIn once",
+      "key": "targetAppVersionIn",
+      "query": "?targetAppVersionIn=1.0.0",
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": [
+          "1.0.0"
+        ]
+      }
+    },
+    {
+      "description": "targetAppVersionIn twice -> two ranges",
+      "key": "targetAppVersionIn",
+      "query": "?targetAppVersionIn=1.0.0&targetAppVersionIn=2.0.0",
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": [
+          "1.0.0",
+          "2.0.0"
+        ]
+      }
+    },
+    {
+      "description": "targetAppVersionIn with a comma -> ONE range containing a comma",
+      "key": "targetAppVersionIn",
+      "query": "?targetAppVersionIn=1.0.0,2.0.0",
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": [
+          "1.0.0,2.0.0"
+        ]
+      }
+    },
+    {
+      "description": "targetAppVersionIn with a range that legitimately contains spaces",
+      "key": "targetAppVersionIn",
+      "query": "?targetAppVersionIn=%3E%3D1.0.0%20%3C2.0.0",
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": [
+          ">=1.0.0 <2.0.0"
+        ]
+      }
+    },
+    {
+      "description": "targetAppVersionIn empty value",
+      "key": "targetAppVersionIn",
+      "query": "?targetAppVersionIn=",
+      "status": 200,
+      "expected": {
+        "ok": true,
+        "value": [
+          ""
+        ]
+      }
+    }
+  ],
+  "booleanParamCases": [
+    {
+      "description": "enabled absent -> no filter",
+      "key": "enabled",
+      "raw": null,
+      "status": 200,
+      "expected": {
+        "value": null
+      }
+    },
+    {
+      "description": "enabled true",
+      "key": "enabled",
+      "raw": "true",
+      "status": 200,
+      "expected": {
+        "value": true
+      }
+    },
+    {
+      "description": "enabled false",
+      "key": "enabled",
+      "raw": "false",
+      "status": 200,
+      "expected": {
+        "value": false
+      }
+    },
+    {
+      "description": "enabled uppercase TRUE is rejected",
+      "key": "enabled",
+      "raw": "TRUE",
+      "status": 400,
+      "expected": {
+        "message": "The 'enabled' query parameter must be 'true' or 'false'."
+      }
+    },
+    {
+      "description": "enabled capitalised True is rejected",
+      "key": "enabled",
+      "raw": "True",
+      "status": 400,
+      "expected": {
+        "message": "The 'enabled' query parameter must be 'true' or 'false'."
+      }
+    },
+    {
+      "description": "enabled 1 is rejected",
+      "key": "enabled",
+      "raw": "1",
+      "status": 400,
+      "expected": {
+        "message": "The 'enabled' query parameter must be 'true' or 'false'."
+      }
+    },
+    {
+      "description": "enabled 0 is rejected",
+      "key": "enabled",
+      "raw": "0",
+      "status": 400,
+      "expected": {
+        "message": "The 'enabled' query parameter must be 'true' or 'false'."
+      }
+    },
+    {
+      "description": "enabled yes is rejected",
+      "key": "enabled",
+      "raw": "yes",
+      "status": 400,
+      "expected": {
+        "message": "The 'enabled' query parameter must be 'true' or 'false'."
+      }
+    },
+    {
+      "description": "enabled no is rejected",
+      "key": "enabled",
+      "raw": "no",
+      "status": 400,
+      "expected": {
+        "message": "The 'enabled' query parameter must be 'true' or 'false'."
+      }
+    },
+    {
+      "description": "enabled on is rejected",
+      "key": "enabled",
+      "raw": "on",
+      "status": 400,
+      "expected": {
+        "message": "The 'enabled' query parameter must be 'true' or 'false'."
+      }
+    },
+    {
+      "description": "enabled the empty string is rejected",
+      "key": "enabled",
+      "raw": "",
+      "status": 400,
+      "expected": {
+        "message": "The 'enabled' query parameter must be 'true' or 'false'."
+      }
+    },
+    {
+      "description": "enabled whitespace-padded true is rejected (no trimming)",
+      "key": "enabled",
+      "raw": " true ",
+      "status": 400,
+      "expected": {
+        "message": "The 'enabled' query parameter must be 'true' or 'false'."
+      }
+    },
+    {
+      "description": "enabled null is rejected",
+      "key": "enabled",
+      "raw": "null",
+      "status": 400,
+      "expected": {
+        "message": "The 'enabled' query parameter must be 'true' or 'false'."
+      }
+    },
+    {
+      "description": "enabled garbage is rejected",
+      "key": "enabled",
+      "raw": "maybe",
+      "status": 400,
+      "expected": {
+        "message": "The 'enabled' query parameter must be 'true' or 'false'."
+      }
+    },
+    {
+      "description": "targetAppVersionNotNull absent -> no filter",
+      "key": "targetAppVersionNotNull",
+      "raw": null,
+      "status": 200,
+      "expected": {
+        "value": null
+      }
+    },
+    {
+      "description": "targetAppVersionNotNull true",
+      "key": "targetAppVersionNotNull",
+      "raw": "true",
+      "status": 200,
+      "expected": {
+        "value": true
+      }
+    },
+    {
+      "description": "targetAppVersionNotNull false",
+      "key": "targetAppVersionNotNull",
+      "raw": "false",
+      "status": 200,
+      "expected": {
+        "value": false
+      }
+    },
+    {
+      "description": "targetAppVersionNotNull rejection names ITS OWN key, not enabled",
+      "key": "targetAppVersionNotNull",
+      "raw": "yes",
+      "status": 400,
+      "expected": {
+        "message": "The 'targetAppVersionNotNull' query parameter must be 'true' or 'false'."
+      }
+    },
+    {
+      "description": "targetAppVersionNotNull uppercase is rejected",
+      "key": "targetAppVersionNotNull",
+      "raw": "FALSE",
+      "status": 400,
+      "expected": {
+        "message": "The 'targetAppVersionNotNull' query parameter must be 'true' or 'false'."
+      }
+    },
+    {
+      "description": "enabled trailing space is rejected (no trimming)",
+      "key": "enabled",
+      "raw": "true ",
+      "status": 400,
+      "expected": {
+        "message": "The 'enabled' query parameter must be 'true' or 'false'."
+      }
+    },
+    {
+      "description": "enabled leading space is rejected (no trimming)",
+      "key": "enabled",
+      "raw": " true",
+      "status": 400,
+      "expected": {
+        "message": "The 'enabled' query parameter must be 'true' or 'false'."
+      }
+    },
+    {
+      "description": "enabled tab-padded is rejected (no trimming)",
+      "key": "enabled",
+      "raw": "\ttrue",
+      "status": 400,
+      "expected": {
+        "message": "The 'enabled' query parameter must be 'true' or 'false'."
+      }
+    },
+    {
+      "description": "enabled mixed case is rejected (no case folding)",
+      "key": "enabled",
+      "raw": "TrUe",
+      "status": 400,
+      "expected": {
+        "message": "The 'enabled' query parameter must be 'true' or 'false'."
+      }
+    },
+    {
+      "description": "enabled false with trailing space is rejected",
+      "key": "enabled",
+      "raw": "false ",
+      "status": 400,
+      "expected": {
+        "message": "The 'enabled' query parameter must be 'true' or 'false'."
+      }
+    },
+    {
+      "description": "enabled numeric 1.0 is rejected (no Number coercion)",
+      "key": "enabled",
+      "raw": "1.0",
+      "status": 400,
+      "expected": {
+        "message": "The 'enabled' query parameter must be 'true' or 'false'."
+      }
+    },
+    {
+      "description": "enabled +1 is rejected (no Number coercion)",
+      "key": "enabled",
+      "raw": "+1",
+      "status": 400,
+      "expected": {
+        "message": "The 'enabled' query parameter must be 'true' or 'false'."
+      }
+    }
+  ],
+  "nullableStringParamCases": [
+    {
+      "description": "targetAppVersion absent -> no filter at all",
+      "key": "targetAppVersion",
+      "raw": null,
+      "status": 200,
+      "expected": {
+        "present": false,
+        "value": null
+      }
+    },
+    {
+      "description": "targetAppVersion=null -> SQL NULL, not the literal string",
+      "key": "targetAppVersion",
+      "raw": "null",
+      "status": 200,
+      "expected": {
+        "present": true,
+        "value": null
+      }
+    },
+    {
+      "description": "targetAppVersion=NULL (uppercase) -> the LITERAL string, matching is case sensitive",
+      "key": "targetAppVersion",
+      "raw": "NULL",
+      "status": 200,
+      "expected": {
+        "present": true,
+        "value": "NULL"
+      }
+    },
+    {
+      "description": "targetAppVersion=Null -> the literal string",
+      "key": "targetAppVersion",
+      "raw": "Null",
+      "status": 200,
+      "expected": {
+        "present": true,
+        "value": "Null"
+      }
+    },
+    {
+      "description": "targetAppVersion= (empty) -> a REAL filter on the empty string, not \"absent\"",
+      "key": "targetAppVersion",
+      "raw": "",
+      "status": 200,
+      "expected": {
+        "present": true,
+        "value": ""
+      }
+    },
+    {
+      "description": "targetAppVersion with an ordinary value",
+      "key": "targetAppVersion",
+      "raw": "1.0.0",
+      "status": 200,
+      "expected": {
+        "present": true,
+        "value": "1.0.0"
+      }
+    },
+    {
+      "description": "targetAppVersion with a range value",
+      "key": "targetAppVersion",
+      "raw": ">=1.0.0 <2.0.0",
+      "status": 200,
+      "expected": {
+        "present": true,
+        "value": ">=1.0.0 <2.0.0"
+      }
+    },
+    {
+      "description": "targetAppVersion=\" null \" -> whitespace-padded, so the literal string (no trimming)",
+      "key": "targetAppVersion",
+      "raw": " null ",
+      "status": 200,
+      "expected": {
+        "present": true,
+        "value": " null "
+      }
+    },
+    {
+      "description": "targetAppVersion=nul -> the literal string",
+      "key": "targetAppVersion",
+      "raw": "nul",
+      "status": 200,
+      "expected": {
+        "present": true,
+        "value": "nul"
+      }
+    },
+    {
+      "description": "targetAppVersion=nulll -> the literal string",
+      "key": "targetAppVersion",
+      "raw": "nulll",
+      "status": 200,
+      "expected": {
+        "present": true,
+        "value": "nulll"
+      }
+    },
+    {
+      "description": "fingerprintHash absent -> no filter at all",
+      "key": "fingerprintHash",
+      "raw": null,
+      "status": 200,
+      "expected": {
+        "present": false,
+        "value": null
+      }
+    },
+    {
+      "description": "fingerprintHash=null -> SQL NULL, the SAME rule as targetAppVersion",
+      "key": "fingerprintHash",
+      "raw": "null",
+      "status": 200,
+      "expected": {
+        "present": true,
+        "value": null
+      }
+    },
+    {
+      "description": "fingerprintHash=NULL (uppercase) -> the literal string",
+      "key": "fingerprintHash",
+      "raw": "NULL",
+      "status": 200,
+      "expected": {
+        "present": true,
+        "value": "NULL"
+      }
+    },
+    {
+      "description": "fingerprintHash= (empty) -> a REAL filter on the empty string",
+      "key": "fingerprintHash",
+      "raw": "",
+      "status": 200,
+      "expected": {
+        "present": true,
+        "value": ""
+      }
+    },
+    {
+      "description": "fingerprintHash with an ordinary value",
+      "key": "fingerprintHash",
+      "raw": "fp-abc",
+      "status": 200,
+      "expected": {
+        "present": true,
+        "value": "fp-abc"
+      }
+    }
+  ],
+  "truthyStringParamCases": [
+    {
+      "description": "channel absent -> no filter",
+      "key": "channel",
+      "raw": null,
+      "status": 200,
+      "expected": {
+        "present": false,
+        "value": null
+      }
+    },
+    {
+      "description": "channel= (empty) -> filter DROPPED, unlike targetAppVersion which keeps it",
+      "key": "channel",
+      "raw": "",
+      "status": 200,
+      "expected": {
+        "present": false,
+        "value": null
+      }
+    },
+    {
+      "description": "channel with an ordinary value",
+      "key": "channel",
+      "raw": "production",
+      "status": 200,
+      "expected": {
+        "present": true,
+        "value": "production"
+      }
+    },
+    {
+      "description": "channel=null -> the LITERAL string, NOT SQL NULL -- channel is not a nullable-string param",
+      "key": "channel",
+      "raw": "null",
+      "status": 200,
+      "expected": {
+        "present": true,
+        "value": "null"
+      }
+    },
+    {
+      "description": "channel=0 -> kept (\"0\" is a truthy STRING in JS)",
+      "key": "channel",
+      "raw": "0",
+      "status": 200,
+      "expected": {
+        "present": true,
+        "value": "0"
+      }
+    },
+    {
+      "description": "channel=\" \" (space) -> kept, a non-empty string is truthy",
+      "key": "channel",
+      "raw": " ",
+      "status": 200,
+      "expected": {
+        "present": true,
+        "value": " "
+      }
+    },
+    {
+      "description": "channel=false -> kept, it is just a string",
+      "key": "channel",
+      "raw": "false",
+      "status": 200,
+      "expected": {
+        "present": true,
+        "value": "false"
+      }
+    }
+  ]
+}

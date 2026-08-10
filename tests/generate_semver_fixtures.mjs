@@ -6,8 +6,26 @@
 //
 // Re-run whenever the semver package is upgraded:
 //   node tests/generate_semver_fixtures.mjs > tests/fixtures/semver_fixtures.json
-import { semverSatisfies } from '@hot-updater/plugin-core';
-import semver from 'semver';
+
+// Node's ESM resolver ignores NODE_PATH, so a bare `import '@hot-updater/plugin-core'` only
+// works when a node_modules containing it sits on the path from THIS file to the filesystem
+// root (ESM resolution walks up from the importing file, not from the cwd). Fall back to the
+// tools/fixture-gen install that exists precisely to provide the packages.
+const importUpstream = async (specifier, fallbackPath) => {
+  try {
+    return await import(specifier);
+  } catch (err) {
+    if (err?.code !== 'ERR_MODULE_NOT_FOUND') throw err;
+    return import(new URL(`../tools/fixture-gen/node_modules/${fallbackPath}`, import.meta.url));
+  }
+};
+
+const { semverSatisfies } = await importUpstream(
+  '@hot-updater/plugin-core',
+  '@hot-updater/plugin-core/dist/index.mjs',
+);
+// `semver` is CommonJS; a dynamic import of its entry point exposes module.exports as `default`.
+const semver = (await importUpstream('semver', 'semver/index.js')).default;
 
 const satisfiesCases = [];
 const addSatisfies = (description, currentVersion, targetRange, group = 'common') => {

@@ -1,5 +1,8 @@
 use std::collections::HashMap;
 use std::env;
+use std::fmt::Display;
+use std::str::FromStr;
+use std::time::Duration;
 
 /// Comma-separated list of app names the server serves, e.g. `APPS=main-app,beta-app`.
 pub const APPS_ENV_VAR: &str = "APPS";
@@ -104,6 +107,226 @@ impl Config {
 
     pub fn get_app_config(&self, app_name: &str) -> Option<&AppConfig> {
         self.apps.get(app_name)
+    }
+}
+
+/// Tuning for the MySQL connection pool.
+///
+/// Every field is optional in the environment and defaults to the value this server
+/// used when the pool was hardcoded, so an unchanged `.env` keeps behaving identically.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DbPoolConfig {
+    pub max_connections: u32,
+    pub min_connections: u32,
+    pub acquire_timeout: Duration,
+    pub idle_timeout: Duration,
+}
+
+impl Default for DbPoolConfig {
+    fn default() -> Self {
+        Self {
+            max_connections: 10,
+            min_connections: 2,
+            acquire_timeout: Duration::from_secs(3),
+            idle_timeout: Duration::from_secs(60),
+        }
+    }
+}
+
+impl DbPoolConfig {
+    pub fn from_env() -> Result<Self, String> {
+        let defaults = Self::default();
+        let cfg = Self {
+            max_connections: parse_env("DB_MAX_CONNECTIONS", defaults.max_connections)?,
+            min_connections: parse_env("DB_MIN_CONNECTIONS", defaults.min_connections)?,
+            acquire_timeout: Duration::from_secs(parse_env(
+                "DB_ACQUIRE_TIMEOUT_SECS",
+                defaults.acquire_timeout.as_secs(),
+            )?),
+            idle_timeout: Duration::from_secs(parse_env(
+                "DB_IDLE_TIMEOUT_SECS",
+                defaults.idle_timeout.as_secs(),
+            )?),
+        };
+
+        if cfg.max_connections == 0 {
+            return Err("Invalid DB_MAX_CONNECTIONS: must be at least 1.".to_string());
+        }
+        if cfg.min_connections > cfg.max_connections {
+            return Err(format!(
+                "Invalid DB_MIN_CONNECTIONS={}: must not exceed DB_MAX_CONNECTIONS={}.",
+                cfg.min_connections, cfg.max_connections
+            ));
+        }
+        if cfg.acquire_timeout.is_zero() {
+            return Err("Invalid DB_ACQUIRE_TIMEOUT_SECS: must be at least 1.".to_string());
+        }
+
+        Ok(cfg)
+    }
+}
+
+/// How much per-request logging the HTTP layer emits.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HttpLogLevel {
+    /// No request spans and no access log at all — the cheapest possible hot path.
+    Off,
+    On(tracing::Level),
+}
+
+/// Everything the observability layer needs. All optional, all defaulted.
+#[derive(Clone, Debug)]
+pub struct ObservabilityConfig {
+    /// Level of the per-request access log (`HTTP_LOG_LEVEL`).
+    pub http_log_level: HttpLogLevel,
+    /// Whether `GET /metrics` is served (`METRICS_ENABLED`).
+    pub metrics_enabled: bool,
+    /// Allowed CORS origins (`CORS_ALLOWED_ORIGINS`). Empty = no CORS layer at all.
+    pub cors_allowed_origins: Vec<String>,
+}
+
+impl Default for ObservabilityConfig {
+    fn default() -> Self {
+        Self {
+            http_log_level: HttpLogLevel::On(tracing::Level::INFO),
+            metrics_enabled: true,
+            // Restrictive by default: the hot-updater SDK and CLI are native HTTP
+            // clients, not browsers, so nothing in the normal flow needs CORS. Sending
+            // no CORS headers at all keeps browsers from scripting the CLI API on
+            // behalf of whoever happens to be visiting a page. Opt in per deployment.
+            cors_allowed_origins: Vec::new(),
+        }
+    }
+}
+
+impl ObservabilityConfig {
+    pub fn from_env() -> Result<Self, String> {
+        let defaults = Self::default();
+
+        let http_log_level = match env::var("HTTP_LOG_LEVEL") {
+            Ok(raw) => match raw.trim().to_ascii_lowercase().as_str() {
+                "off" | "none" => HttpLogLevel::Off,
+                "error" => HttpLogLevel::On(tracing::Level::ERROR),
+                "warn" => HttpLogLevel::On(tracing::Level::WARN),
+                "info" => HttpLogLevel::On(tracing::Level::INFO),
+                "debug" => HttpLogLevel::On(tracing::Level::DEBUG),
+                "trace" => HttpLogLevel::On(tracing::Level::TRACE),
+                other => {
+                    return Err(format!(
+                        "Invalid HTTP_LOG_LEVEL='{other}': expected one of off, error, warn, info, debug, trace."
+                    ))
+                }
+            },
+            Err(_) => defaults.http_log_level,
+        };
+
+        let cors_allowed_origins = env::var("CORS_ALLOWED_ORIGINS")
+            .ok()
+            .map(|raw| {
+                raw.split(',')
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+                    .map(str::to_string)
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or(defaults.cors_allowed_origins);
+
+        Ok(Self {
+            http_log_level,
+            metrics_enabled: parse_bool_env("METRICS_ENABLED", defaults.metrics_enabled)?,
+            cors_allowed_origins,
+        })
+    }
+}
+
+/// Opt-in rate limiting for the unauthenticated update-check routes.
+///
+/// Disabled by default: an OTA server normally sits behind a reverse proxy that already
+/// does this, and silently throttling device update-checks on upgrade would be a nasty
+/// surprise.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RateLimitConfig {
+    pub enabled: bool,
+    /// Sustained requests per second allowed per client key.
+    pub per_second: u32,
+    /// How many requests a client may fire back to back before the sustained rate applies.
+    pub burst: u32,
+    /// Take the client IP from `X-Forwarded-For`/`X-Real-IP`/`Forwarded` instead of the
+    /// socket peer. Only enable when a trusted proxy sets (and overwrites) those headers.
+    pub trust_proxy_headers: bool,
+}
+
+impl Default for RateLimitConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            per_second: 10,
+            burst: 20,
+            trust_proxy_headers: false,
+        }
+    }
+}
+
+impl RateLimitConfig {
+    /// The explicit "no rate limiting" configuration.
+    pub fn disabled() -> Self {
+        Self {
+            enabled: false,
+            ..Self::default()
+        }
+    }
+
+    pub fn from_env() -> Result<Self, String> {
+        let defaults = Self::default();
+        let cfg = Self {
+            enabled: parse_bool_env("RATE_LIMIT_ENABLED", defaults.enabled)?,
+            per_second: parse_env("RATE_LIMIT_UPDATE_CHECK_PER_SECOND", defaults.per_second)?,
+            burst: parse_env("RATE_LIMIT_UPDATE_CHECK_BURST", defaults.burst)?,
+            trust_proxy_headers: parse_bool_env(
+                "RATE_LIMIT_TRUST_PROXY_HEADERS",
+                defaults.trust_proxy_headers,
+            )?,
+        };
+
+        if cfg.enabled && cfg.per_second == 0 {
+            return Err(
+                "Invalid RATE_LIMIT_UPDATE_CHECK_PER_SECOND: must be at least 1.".to_string(),
+            );
+        }
+        if cfg.enabled && cfg.burst == 0 {
+            return Err("Invalid RATE_LIMIT_UPDATE_CHECK_BURST: must be at least 1.".to_string());
+        }
+
+        Ok(cfg)
+    }
+}
+
+/// Parse an optional env var, falling back to `default` when unset, and failing with a
+/// message that names the variable when it is set to something unparseable.
+fn parse_env<T>(key: &str, default: T) -> Result<T, String>
+where
+    T: FromStr,
+    T::Err: Display,
+{
+    match env::var(key) {
+        Ok(raw) => raw
+            .trim()
+            .parse()
+            .map_err(|err| format!("Invalid {key}='{}': {err}", raw.trim())),
+        Err(_) => Ok(default),
+    }
+}
+
+fn parse_bool_env(key: &str, default: bool) -> Result<bool, String> {
+    match env::var(key) {
+        Ok(raw) => match raw.trim().to_ascii_lowercase().as_str() {
+            "1" | "true" | "yes" | "on" => Ok(true),
+            "0" | "false" | "no" | "off" => Ok(false),
+            other => Err(format!(
+                "Invalid {key}='{other}': expected a boolean (true/false)."
+            )),
+        },
+        Err(_) => Ok(default),
     }
 }
 

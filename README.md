@@ -1,58 +1,127 @@
 # React Native OTA Server (Rust)
 
-A self-hosted over-the-air update server for React Native apps, written in Rust.
+[![CI](https://github.com/ebubekirkaraca/rn-ota-server-rust/actions/workflows/ci.yml/badge.svg)](https://github.com/ebubekirkaraca/rn-ota-server-rust/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/rn-ota-server-rust.svg)](https://crates.io/crates/rn-ota-server-rust)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-It is a wire-compatible reimplementation of the [hot-updater](https://github.com/gronxb/hot-updater)
-self-hosted server: the same update-check endpoints, the same decision algorithm, the same CLI API
-surface — so the stock `hot-updater` React Native SDK and CLI talk to it unchanged.
+**A drop-in Rust replacement for the [hot-updater](https://github.com/gronxb/hot-updater)
+self-hosted server — and nothing else.**
 
-- **Axum + sqlx + MySQL**, single binary, no Node runtime at request time
-- **Multi-app** out of the box — one server serves any number of apps, each with its own auth token
-  and its own S3/R2 bucket
-- **Parity is tested, not claimed** — the update decision logic and the semver range engine are
-  verified against fixtures generated from the real `@hot-updater/js` and `semver` npm packages
-- Supports **appVersion** and **fingerprint** update strategies, staged rollouts, cohorts,
-  bundle rollback, manifest/changed-asset responses and bsdiff patch delivery
+## Read this first: what this project is, and what it is not
+
+This is **not a standalone OTA solution.** It is one piece of hot-updater — the server — rewritten
+in Rust. Everything else still comes from upstream and is required:
+
+| Piece                        | Where it comes from                     |
+| ---------------------------- | --------------------------------------- |
+| React Native SDK in your app | **hot-updater** (upstream, unchanged)   |
+| `hot-updater` CLI            | **hot-updater** (upstream, unchanged)   |
+| Bundle format, protocol      | **hot-updater** (upstream)              |
+| Update server                | **this project** (Rust)                 |
+
+**You must install and use hot-updater in your React Native app.** Add
+[`hot-updater`](https://github.com/gronxb/hot-updater) exactly as its documentation describes,
+build your bundles with its CLI, and then simply point its update source at this server instead
+of a Node one. There is no SDK to swap, no patch to apply, no fork to install — the route shapes
+and response bodies are wire-compatible, so the stock SDK and CLI cannot tell the difference.
+
+If you are not already a hot-updater user, start with
+[upstream's documentation](https://gronxb.github.io/hot-updater/) first. Come back here when you
+want to run the server side yourself.
 
 Verified against upstream **hot-updater 0.35.8**. See [docs/upstream-parity.md](docs/upstream-parity.md)
 for the exact source-to-file mapping and the list of intentional deviations.
 
 ---
 
-## Why
+## Why swap out the server
 
-The upstream self-hosted server is a Node handler you embed in your own framework, wired to a DB
-adapter. This project instead gives you a standalone binary you can run behind nginx or in a
-container, with MySQL and S3-compatible storage (Cloudflare R2, AWS S3, MinIO) configured through
-environment variables, and with per-app credential isolation built in.
+Upstream's self-hosted server is a Node handler you embed in your own framework and wire to a DB
+adapter. This project gives you instead:
+
+- **A single static binary** — Axum + sqlx + MySQL, no Node runtime at request time
+- **Multi-app out of the box** — one server serves any number of apps, each with its own auth token
+  and its own S3/R2 bucket
+- **Parity that is tested, not claimed** — the update decision logic and the semver range engine
+  are verified against fixtures generated from the real `@hot-updater/js` and `semver` npm packages
+- Full feature coverage: **appVersion** and **fingerprint** strategies, staged rollouts, cohorts,
+  bundle rollback, manifest/changed-asset responses and bsdiff patch delivery
 
 If you run one app and are happy with Node, use upstream. If you run several apps, want a single
 small binary, or want the update-check path to be cheap, this is for you.
 
 ---
 
-## Quick start
+## Requirements
+
+- **hot-updater** in your React Native app (SDK + CLI) — see above
+- **MySQL 8.0+**
+- **S3-compatible storage** — Cloudflare R2, AWS S3 or MinIO
+- Rust 1.94.1+ *only if you build from source* (the AWS SDK sets that floor, not this code)
+
+---
+
+## Install
+
+Pick whichever fits. All three give you the same `rn-ota-server-rust` binary.
+
+### 1. Prebuilt binary (no toolchain needed)
+
+Grab the archive for your platform from the
+[latest release](https://github.com/ebubekirkaraca/rn-ota-server-rust/releases/latest) — Linux
+(x86_64, aarch64), macOS (Intel, Apple Silicon) and Windows (x86_64) are published on every tag,
+each with a `.sha256` checksum file.
 
 ```bash
-git clone https://github.com/<your-account>/rn-ota-server-rust.git
+VERSION=v1.0.0
+TARGET=x86_64-unknown-linux-gnu
+curl -LO "https://github.com/ebubekirkaraca/rn-ota-server-rust/releases/download/${VERSION}/rn-ota-server-rust-${VERSION}-${TARGET}.tar.gz"
+curl -LO "https://github.com/ebubekirkaraca/rn-ota-server-rust/releases/download/${VERSION}/rn-ota-server-rust-${VERSION}-${TARGET}.tar.gz.sha256"
+shasum -a 256 -c "rn-ota-server-rust-${VERSION}-${TARGET}.tar.gz.sha256"
+
+tar xzf "rn-ota-server-rust-${VERSION}-${TARGET}.tar.gz"
+cd "rn-ota-server-rust-${VERSION}-${TARGET}"
+cp .env.example .env      # fill it in, see Configuration
+./rn-ota-server-rust
+```
+
+### 2. cargo install
+
+```bash
+cargo install rn-ota-server-rust
+rn-ota-server-rust                 # reads .env from the working directory
+```
+
+### 3. Docker
+
+```bash
+git clone https://github.com/ebubekirkaraca/rn-ota-server-rust.git
 cd rn-ota-server-rust
-cp .env.example .env      # fill in DATABASE_URL, APPS and the per-app credentials
+cp .env.example .env               # fill in APPS and the per-app credentials
+docker compose up --build          # starts MySQL + the server
+```
+
+`docker-compose.yml` overrides `DATABASE_URL` to point at its own MySQL service, so you only need
+to fill in the app credentials in `.env`.
+
+### 4. From source
+
+```bash
+git clone https://github.com/ebubekirkaraca/rn-ota-server-rust.git
+cd rn-ota-server-rust
+cp .env.example .env
 cargo run --release
 ```
 
-On startup the server connects to MySQL and runs the migrations in `migrations/` automatically.
-
-### Docker
-
-```bash
-docker compose up --build      # starts MySQL + the server, reads .env
-```
+On startup the server connects to MySQL and runs the migrations in `migrations/` automatically, so
+there is no separate schema step.
 
 ---
 
 ## Configuration
 
-Everything is configured through environment variables (a `.env` file is loaded if present).
+Everything is configured through environment variables (a `.env` file in the working directory is
+loaded if present).
 
 | Variable       | Required | Default                                             | Meaning                                    |
 | -------------- | -------- | --------------------------------------------------- | ------------------------------------------ |
@@ -61,6 +130,47 @@ Everything is configured through environment variables (a `.env` file is loaded 
 | `HOST`         | no       | `127.0.0.1`                                         | Bind address                               |
 | `PORT`         | no       | `3010`                                              | Bind port                                  |
 | `R2_ENDPOINT`  | no       | —                                                   | Shared S3-compatible endpoint (fallback)   |
+
+### Observability
+
+All optional; the defaults are what the server ran with before these existed.
+
+| Variable                | Default | Meaning                                                                            |
+| ----------------------- | ------- | ---------------------------------------------------------------------------------- |
+| `RUST_LOG`              | `info`  | Log filter, standard `tracing` syntax. The default quiets sqlx/hyper/the AWS SDK.   |
+| `HTTP_LOG_LEVEL`        | `info`  | Level of the per-request access log. `off` disables request spans entirely.         |
+| `METRICS_ENABLED`       | `true`  | Serve `GET /metrics` in Prometheus text format.                                     |
+| `CORS_ALLOWED_ORIGINS`  | —       | Comma-separated origins, or `*`. Unset sends no CORS headers at all.                |
+
+`/metrics` is unauthenticated, like `/health` — block it at your reverse proxy or set
+`METRICS_ENABLED=false`. Metric labels are deliberately low-cardinality: routes collapse to a
+fixed set of classes, `app` is restricted to the names in `APPS` (anything else becomes
+`unknown`), and no metric is ever labelled by bundle id, app version, fingerprint hash or cohort.
+
+### Database connection pool
+
+| Variable                  | Default |
+| ------------------------- | ------- |
+| `DB_MAX_CONNECTIONS`      | `10`    |
+| `DB_MIN_CONNECTIONS`      | `2`     |
+| `DB_ACQUIRE_TIMEOUT_SECS` | `3`     |
+| `DB_IDLE_TIMEOUT_SECS`    | `60`    |
+
+### Rate limiting
+
+Off by default, and applied to the **unauthenticated update-check routes only** — the CLI API is
+never throttled. Most deployments sit behind a reverse proxy that already does this; turn it on
+only if yours does not.
+
+| Variable                             | Default | Meaning                                                     |
+| ------------------------------------ | ------- | ----------------------------------------------------------- |
+| `RATE_LIMIT_ENABLED`                 | `false` | Master switch                                               |
+| `RATE_LIMIT_UPDATE_CHECK_PER_SECOND` | `10`    | Sustained rate per client                                   |
+| `RATE_LIMIT_UPDATE_CHECK_BURST`      | `20`    | Burst allowance                                             |
+| `RATE_LIMIT_TRUST_PROXY_HEADERS`     | `false` | Take the client IP from `X-Forwarded-For` / `X-Real-IP`      |
+
+Only enable `RATE_LIMIT_TRUST_PROXY_HEADERS` when a trusted proxy sets **and overwrites** those
+headers. Otherwise any client can choose its own rate-limit bucket by forging one.
 
 ### Per-app variables
 
@@ -98,9 +208,29 @@ R2_ENDPOINT=https://<account>.r2.cloudflarestorage.com
 
 ---
 
+## Pointing hot-updater at this server
+
+This is the only change on the React Native side. In your app's hot-updater config, set the update
+source to the **app-prefixed** base URL:
+
+```
+https://ota.example.com/main-app/hot-updater
+```
+
+and give the CLI `AUTH_TOKEN_MAIN_APP` as its token. The `/{app}` prefix is what lets one server
+serve several apps; everything after it matches upstream exactly.
+
+Build and deploy bundles with the upstream CLI as you normally would:
+
+```bash
+npx hot-updater deploy
+```
+
+---
+
 ## Endpoints
 
-Every route is prefixed with the app name, which is how one server serves several apps.
+Every route is prefixed with the app name.
 
 ### Update check (called by the device, no auth)
 
@@ -129,20 +259,53 @@ DELETE /{app}/hot-updater/api/bundles/{id}
 
 ```
 GET /version      # this server's own version
+GET /health       # liveness probe, does not touch the database
+GET /metrics      # Prometheus text format, when METRICS_ENABLED
 ```
 
 ---
 
-## Pointing the React Native SDK at this server
+## Deployment
 
-In your app's hot-updater config, set the update source to the app-prefixed base URL:
+Put the server behind a TLS-terminating reverse proxy (nginx, Caddy, a load balancer) — CLI bearer
+tokens travel in the `Authorization` header. See [SECURITY.md](SECURITY.md) for the full list of
+deployment considerations.
 
+The process shuts down gracefully on SIGINT/SIGTERM, so `docker stop`, systemd and PM2 restarts
+finish in-flight requests instead of dropping them.
+
+### systemd
+
+```ini
+[Unit]
+Description=React Native OTA Server
+After=network.target
+
+[Service]
+Type=simple
+User=ota
+WorkingDirectory=/opt/rn-ota-server
+ExecStart=/opt/rn-ota-server/rn-ota-server-rust
+EnvironmentFile=/opt/rn-ota-server/.env
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
 ```
-https://ota.example.com/main-app/hot-updater
+
+### PM2
+
+```bash
+cargo build --release
+pm2 start ecosystem.config.cjs --env production
 ```
 
-and use `AUTH_TOKEN_MAIN_APP` as the CLI token. No SDK patch is required — the route shapes and
-response bodies match upstream.
+### Migrations
+
+Migrations run automatically at startup, so the database user needs DDL rights. Two of them
+(`bundle_check_constraints`, `id_ascii_bin_collation`) were authored without access to a live MySQL
+instance; read their header comments before applying them to a database that already holds data.
 
 ---
 
@@ -165,38 +328,25 @@ The decision and semver fixtures are generated from the real npm packages. See
 [tools/fixture-gen/README.md](tools/fixture-gen/README.md). Regenerate only when upgrading
 upstream, and review the diff — a semantic change there means the Rust side needs to follow.
 
----
-
-## Deployment
-
-`ecosystem.config.cjs` is included for PM2:
-
-```bash
-cargo build --release
-pm2 start ecosystem.config.cjs --env production
-```
-
-Or use the provided `Dockerfile` / `docker-compose.yml`.
-
-Migrations run automatically at startup. Note that two of them (`bundle_check_constraints`,
-`id_ascii_bin_collation`) were authored without access to a live MySQL instance; read their header
-comments before applying them to a database that already holds data.
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
 ## Relationship to upstream
 
-This is an independent reimplementation, not a fork — no upstream code is vendored. It aims for
-behavioral parity with hot-updater's server on the endpoints it implements, with a small set of
-documented, deliberate deviations (multi-app prefix, built-in per-app auth, direct MySQL access,
-independent versioning). All of them are listed in
+This is an independent reimplementation of the server, not a fork — no upstream code is vendored.
+It aims for behavioral parity with hot-updater's server on the endpoints it implements, with a
+small set of documented, deliberate deviations (multi-app prefix, built-in per-app auth, direct
+MySQL access, independent versioning). All of them are listed in
 [docs/upstream-parity.md](docs/upstream-parity.md).
 
-Credit for the protocol, the client SDK and the CLI goes to the
-[hot-updater](https://github.com/gronxb/hot-updater) project.
+The protocol, the client SDK, the CLI and the bundle format are all the work of the
+[hot-updater](https://github.com/gronxb/hot-updater) project by
+[@gronxb](https://github.com/gronxb) — this server would not exist or be useful without it. This
+project is not affiliated with or endorsed by upstream.
 
 ---
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE). hot-updater itself is licensed separately by its authors.

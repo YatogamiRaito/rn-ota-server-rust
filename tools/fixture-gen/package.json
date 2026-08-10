@@ -6,6 +6,7 @@
   "dependencies": {
     "@hot-updater/js": "0.35.8",
     "@hot-updater/plugin-core": "0.35.8",
-    "semver": "^7.6.0"
+    "@hot-updater/server": "0.35.8",
+    "semver": "7.8.5"
   }
 }

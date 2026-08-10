@@ -1,0 +1,15 @@
+target/
+.git/
+.github/
+node_modules/
+logs/
+docs/
+tests/
+tools/
+.env
+.env.local
+*.local
+*.log
+.DS_Store
+.vscode/
+.idea/

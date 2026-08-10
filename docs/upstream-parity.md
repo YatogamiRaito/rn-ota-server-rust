@@ -15,7 +15,9 @@ skeleton, but the decision logic and semver behavior come from separate packages
 | --------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `src/routes/mod.rs`   | `@hot-updater/server` → `dist/handler.mjs` (`createHandler`)   | Route table: `app-version/*`, `fingerprint/*`, `api/bundles*` — path shapes match exactly       |
 | `src/routes/check.rs` | `@hot-updater/js` → `getUpdateInfo`                            | Update decision: UPDATE / ROLLBACK / UP_TO_DATE, rollout, minBundleId, manifest/patch resolution |
-| `src/routes/api.rs`   | `@hot-updater/server` → `dist/handler.mjs` CLI handlers        | `getBundles` filters, cursor pagination, `insertBundle`, `updateBundleById`, `deleteBundleById`  |
+| `src/routes/api.rs`   | `@hot-updater/server` → `dist/handler.mjs` (`handleGetBundles`, query-param layer) | Query-parameter contract: `limit`/`page`/`offset`, `platform`, the `getAll` array params, booleans, nullable strings — including the exact 400 messages |
+| `src/routes/api.rs`   | `@hot-updater/plugin-core` → `dist/createDatabasePlugin.mjs` (`getBundlesWithLegacyCursorFallback`) | Cursor pagination: `buildCursorPageQuery`, `createPaginatedResult`, `calculatePagination`        |
+| `src/routes/api.rs`   | `@hot-updater/server` → `dist/handler.mjs` CLI handlers        | `insertBundle`, `updateBundleById`, `deleteBundleById`                                          |
 | `src/semver.rs`       | `@hot-updater/plugin-core` → `semverSatisfies` + npm `semver`  | Exact reproduction of `semver.coerce()` + `semver.satisfies()` behavior                          |
 | `src/cohort.rs`       | `@hot-updater/js` (cohort/rollout helpers)                     | JS `hash << 5 - hash` string hash, 1000-slot bucketing, `positive_mod`, slug validation          |
 | `src/models.rs`       | `@hot-updater/core` (type definitions)                         | `Bundle` / `BundlePatch` field shape                                                             |
@@ -42,6 +44,16 @@ fixtures. In other words, the parity claim is a tested claim.
    is not used.
 4. **`GET /version` reports this server's own version** (`CARGO_PKG_VERSION`), not the upstream
    hot-updater version. See §3.1.
+5. **Bundle id ordering is byte-wise, upstream's is ICU `localeCompare`.** See §3.3 — this is the
+   one behavioural deviation in the decision path, and it is pinned by an `#[ignore]`d fixture
+   case rather than hidden.
+
+> **A warning about the phrase "cursor pagination" and `@hot-updater/server`.** That package does
+> **not** implement cursor pagination — nothing in it declares `supportsCursorPagination`, so
+> `createDatabasePlugin.getBundles` falls through to `getBundlesWithLegacyCursorFallback` in
+> `@hot-updater/plugin-core`. That fallback is the real code path for the self-hosted server. An
+> earlier investigation looked in the wrong package and concluded there was nothing to match; six
+> deviations were hiding there. Read `plugin-core`, not `server`.
 
 ---
 
@@ -120,6 +132,33 @@ at the same place; `"0.35"` is accepted as `0.35.0` and `{"status":"UP_TO_DATE"}
 
 Since the real SDK always sends a full semver (`HOT_UPDATER_SDK_VERSION = "0.35.8"`), this makes no
 difference in practice. It is recorded here as a known deviation.
+
+### 3.3 Bundle id ordering: byte-wise here, ICU `localeCompare` upstream
+
+Upstream orders and compares bundle ids with `String.prototype.localeCompare`, which is ICU
+collation: it sorts by base letter first, so `…0000a` sorts **before** `…0000A`. This server
+compares ids byte-wise in Rust (`…0000A` first, since `A` is `0x41` and `a` is `0x61`).
+
+**Why this is not being fixed.** Reproducing ICU collation identically in both Rust and MySQL is
+not realistically achievable, and the alternative — a `_bin` collation on the id columns — is
+closed to us: MySQL sets the wire-protocol BINARY flag on *any* `_bin` collation, and sqlx then
+refuses to decode such a column into `String`, which fails every read path in the server. The id
+columns therefore use `CHARACTER SET ascii COLLATE ascii_general_ci` (see
+`migrations/20260722010000_id_ascii_bin_collation.sql`).
+
+**Exposure.** Nil for ids the upstream CLI generates, which are lowercase-hex UUIDs — for the
+alphabet `[0-9a-f-]`, byte order and ICU order agree. It bites only where mixed-case hex ids
+exist, and under `ascii_general_ci` the database cannot even hold both `…0000a` and `…0000A`:
+they collide on the primary key. A second-order consequence is that SQL comparisons are now
+case-*insensitive* while the Rust ones are case-sensitive; the places where that mattered are
+normalised in `src/routes/api.rs`, each marked with a comment saying to revert the normalisation
+if the columns ever move to `_bin`.
+
+**How it is pinned.** Fixture case `D07` records upstream's real answer and is replayed by
+`tests/decision_tests.rs::test_known_limitation_id_localecompare_ordering`, which is `#[ignore]`d
+with this reason. The mechanism is deliberately narrow: the test asserts that the known limitation
+matches **exactly one** fixture case, so a second divergence cannot hide behind the same
+exemption. Run it with `cargo test -- --ignored` to see the deviation demonstrated.
 
 ---
 

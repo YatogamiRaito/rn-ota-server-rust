@@ -1,0 +1,35 @@
+name: Feature request
+description: Suggest a capability this server should have
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do that you cannot do today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+
+  - type: dropdown
+    id: parity
+    attributes:
+      label: Does upstream hot-updater already do this?
+      options:
+        - 'Yes — this is a parity gap'
+        - 'No — this would be an addition on top of upstream'
+        - "I don't know"
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else
+      description: Links to upstream code, workarounds you tried, etc.

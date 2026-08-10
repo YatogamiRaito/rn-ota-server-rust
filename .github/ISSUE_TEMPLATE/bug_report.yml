@@ -1,0 +1,57 @@
+name: Bug report
+description: Something behaves differently than upstream hot-updater, or crashes
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do **not** report security issues here — see [SECURITY.md](../blob/main/SECURITY.md).
+
+  - type: input
+    id: version
+    attributes:
+      label: Server version
+      description: Output of `GET /version`, or the tag/commit you built.
+      placeholder: '1.0.0'
+    validations:
+      required: true
+
+  - type: input
+    id: hot-updater-version
+    attributes:
+      label: hot-updater version
+      description: The version of the React Native SDK / CLI talking to this server.
+      placeholder: '0.35.8'
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Include the request URL and the response body, with tokens and secrets removed.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: If this is a parity bug, what does upstream hot-updater return for the same input?
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, how you run it (binary / cargo install / Docker / PM2), MySQL version, S3 or R2.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Server logs around the failure. This is rendered as code, no backticks needed.
+      render: shell

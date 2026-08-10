@@ -5,10 +5,11 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
-use tracing::error;
+use tracing::{error, warn};
 
 use crate::cohort::is_cohort_eligible_for_update;
 use crate::models::{Bundle, BundlePatch};
+use crate::observability::{record_update_check, UpdateOutcome};
 use crate::semver::{coerce_version, satisfies};
 use crate::storage::get_presigned_url;
 use crate::AppState;
@@ -139,9 +140,50 @@ fn supports_explicit_no_update_response(headers: &HeaderMap) -> bool {
     false
 }
 
+// Unlike the manifest path, a swallow here CAN change the decision: unreadable `target_cohorts`
+// makes the bundle look untargeted, so a device that should have been let in by an explicit
+// cohort list falls back to the rollout percentage. That is the right fallback (it fails closed,
+// never opening a bundle to a device outside the rollout), but it means silently bad data would
+// look exactly like correct data, so a malformed value is logged.
 fn parse_target_cohorts(val: &Option<serde_json::Value>) -> Option<Vec<String>> {
-    val.as_ref()
-        .and_then(|v| serde_json::from_value(v.clone()).ok())
+    let value = val.as_ref()?;
+    match serde_json::from_value::<Vec<String>>(value.clone()) {
+        Ok(cohorts) => Some(cohorts),
+        Err(err) => {
+            warn!(
+                error = %err,
+                "Malformed target_cohorts on a bundle; treating it as untargeted (rollout only)"
+            );
+            None
+        }
+    }
+}
+
+/// Reference: `appVersionStrategy` -- `if (... || !b.targetAppVersion ||
+/// !semverSatisfies(b.targetAppVersion, appVersion) ...) continue;`
+///
+/// `!b.targetAppVersion` is falsy for BOTH `null`/`undefined` and the empty string, so an
+/// empty `target_app_version` drops the bundle before any semver work happens. This has to be
+/// checked explicitly on the Rust side: npm-compatible range parsing treats an empty range as
+/// `*`, so `satisfies(v, "")` matches every version and an untargeted bundle would ship.
+pub fn matches_target_app_version(target: Option<&str>, client_version: &semver::Version) -> bool {
+    match target {
+        Some(t) if !t.is_empty() => satisfies(client_version, t),
+        _ => false,
+    }
+}
+
+/// Reference: `fingerprintStrategy` -- `if (... || !b.fingerprintHash ||
+/// b.fingerprintHash !== fingerprintHash ...) continue;`
+///
+/// The `!b.fingerprintHash` arm means a stored empty-string hash never matches, not even when
+/// the request itself carries an empty `fingerprintHash`. A plain `stored == requested` would
+/// let those two empties match.
+pub fn matches_fingerprint(stored: Option<&str>, requested: &str) -> bool {
+    match stored {
+        Some(s) if !s.is_empty() => s == requested,
+        _ => false,
+    }
 }
 
 // Reference: updateArtifacts.ts resolveUniqueHbcAssetPath -- returns the asset path ending
@@ -162,11 +204,21 @@ fn resolve_unique_hbc_asset_path(manifest: &Manifest) -> Option<String> {
 
 // Reference: @hot-updater/core getBundlePatch -- finds the record in the target bundle's
 // patch list whose base_bundle_id == currentBundle.id.
+//
+// COLLATION: both sides come from the database, and the id columns are `ascii_general_ci`, so
+// MySQL considers `…000AB` and `…000ab` the same value -- the FK from `bundle_patches.base_bundle_id`
+// to `bundles.id` accepts a reference written in the other case (verified on MySQL 8.0.46). A
+// byte-wise `==` here would reject a patch row the database itself regards as a valid reference,
+// silently costing the device a full download. Matching the column's own semantics instead.
+// REVERT THIS if the id columns ever move back to a `_bin` collation: byte equality would then
+// be the correct comparison and this normalisation would be wrong.
 fn find_bundle_patch<'a>(
     patches: &'a [BundlePatch],
     base_bundle_id: &str,
 ) -> Option<&'a BundlePatch> {
-    patches.iter().find(|p| p.base_bundle_id == base_bundle_id)
+    patches
+        .iter()
+        .find(|p| p.base_bundle_id.eq_ignore_ascii_case(base_bundle_id))
 }
 
 struct HbcPatchDescriptor {
@@ -190,7 +242,9 @@ async fn resolve_hbc_patch_descriptor(
     let matching_patch = find_bundle_patch(target_patches, &current_bundle.id)?;
     let patch_asset_path = resolve_unique_hbc_asset_path(target_manifest)?;
 
-    let patch_url = get_presigned_url(
+    // A presign failure drops only the patch, not the update: the asset keeps its full-download
+    // `file` URL. Logged rather than swallowed -- see the note on `resolve_manifest_artifacts`.
+    let patch_url = match get_presigned_url(
         endpoint,
         access_key,
         secret_key,
@@ -198,7 +252,17 @@ async fn resolve_hbc_patch_descriptor(
         &matching_patch.patch_storage_uri,
     )
     .await
-    .ok()?;
+    {
+        Ok(url) => url,
+        Err(err) => {
+            warn!(
+                patch_storage_uri = %matching_patch.patch_storage_uri,
+                error = %err,
+                "Failed to presign bsdiff patch; device will download the full bundle instead"
+            );
+            return None;
+        }
+    };
 
     Some(HbcPatchDescriptor {
         asset_path: patch_asset_path,
@@ -222,6 +286,23 @@ struct ManifestArtifacts {
 // changedAssets must be returned ALL TOGETHER or NOT AT ALL (Pick<...> | null in the spec).
 // A partially resolved response (e.g. manifestUrl present but changedAssets missing) leads
 // the native side to apply a broken/incomplete update.
+//
+// FAILURE POLICY for this whole function: everything resolved here is a DOWNLOAD OPTIMISATION,
+// never a correctness input. The manifest diff and the bsdiff patch exist only to make the
+// device transfer fewer bytes; whatever they fail to resolve simply falls back to a full
+// download, which is always correct. Deciding WHICH bundle the device gets happens earlier, in
+// `decide_update`, and never depends on anything in here.
+//
+// So failures degrade rather than 500. That is a deliberate choice, not laziness: returning 500
+// on the device update-check path turns "the update ships, just as a bigger download" into "no
+// update at all", because a hot-updater client treats a failed check as "stay on the current
+// bundle". A transient DB or S3 blip would then stall a rollout instead of merely slowing it.
+//
+// The cost of that choice is invisibility, so every degrading path below MUST log a warning
+// with enough context to spot it. `unwrap_or_default()` / `.ok()` with no log is banned here.
+// NOTE for observability: there is currently no counter for "served degraded". A
+// `ota_update_check_degraded_total{app,reason}` counter in `src/observability.rs` would make
+// these warnings alertable; that file is not owned here, so it is left as a recommendation.
 async fn resolve_manifest_artifacts(
     state: &AppState,
     bundle: &Bundle,
@@ -284,13 +365,41 @@ async fn resolve_manifest_artifacts(
         }
     };
 
+    // `current_bundle_id` comes straight off the request path, so it is fully client-controlled.
+    // It MUST be scoped to the tenant (`app_name`) -- otherwise app A could name a bundle id
+    // belonging to app B and have its manifest diffed (and its patch records matched) here.
+    // The scope is taken from `bundle.app_name`: the target bundle was already selected by the
+    // app-scoped candidate query, so it is a trusted value rather than request input.
+    //
+    // A bundle id owned by another app therefore resolves to None -- treated exactly like an id
+    // that does not exist at all (a deleted bundle, or a client reporting an unknown id). That is
+    // the safe direction for a manifest diff: with no current manifest every asset counts as
+    // changed and the client downloads the full set, which is correct-but-slower rather than a
+    // broken partial update. Silently degrading also avoids turning the response into an oracle
+    // for "does bundle X exist in some other app".
+    //
+    // "Not found" and "the query failed" both yield None, but only the second is abnormal, so
+    // they are separated here: a miss is routine (NIL, deleted bundle, other tenant) and must
+    // stay silent, a DB error is not and gets a warning.
     let current_bundle = if current_bundle_id != NIL_UUID {
-        sqlx::query_as::<_, Bundle>("SELECT * FROM bundles WHERE id = ?")
+        match sqlx::query_as::<_, Bundle>("SELECT * FROM bundles WHERE id = ? AND app_name = ?")
             .bind(current_bundle_id)
+            .bind(&bundle.app_name)
             .fetch_optional(&state.db)
             .await
-            .ok()
-            .flatten()
+        {
+            Ok(found) => found,
+            Err(err) => {
+                warn!(
+                    app_name = %bundle.app_name,
+                    current_bundle_id = %current_bundle_id,
+                    error = %err,
+                    "Failed to load the device's current bundle; serving the update without a \
+                     manifest diff (every asset re-downloaded)"
+                );
+                None
+            }
+        }
     } else {
         None
     };
@@ -329,12 +438,35 @@ async fn resolve_manifest_artifacts(
         None => None,
     };
 
-    let target_patches: Vec<BundlePatch> =
-        sqlx::query_as("SELECT * FROM bundle_patches WHERE bundle_id = ? ORDER BY order_index ASC")
-            .bind(&bundle.id)
-            .fetch_all(&state.db)
-            .await
-            .unwrap_or_default();
+    // Tenant scope: `bundle_patches` has no `app_name` column (it hangs off `bundles(id)` by FK),
+    // so this query is scoped INDIRECTLY -- `bundle.id` is the target bundle chosen by the
+    // app-scoped candidates query in the caller, never request input. Do not "fix" this by
+    // binding a client-supplied id here; that would reopen a cross-tenant read.
+    //
+    // An empty result is ambiguous (no patches recorded vs. the query failed) and the two must
+    // not be conflated: losing the patch list costs the device a full HBC download instead of a
+    // small bsdiff, which is worth a warning even though the update itself stays correct. Note it
+    // cannot select the WRONG base -- `find_bundle_patch` matches `base_bundle_id` exactly, so a
+    // missing row yields no patch rather than a mismatched one.
+    let target_patches: Vec<BundlePatch> = match sqlx::query_as(
+        "SELECT * FROM bundle_patches WHERE bundle_id = ? ORDER BY order_index ASC",
+    )
+    .bind(&bundle.id)
+    .fetch_all(&state.db)
+    .await
+    {
+        Ok(patches) => patches,
+        Err(err) => {
+            warn!(
+                app_name = %bundle.app_name,
+                bundle_id = %bundle.id,
+                error = %err,
+                "Failed to load bundle patches; serving the update without a bsdiff patch \
+                 (device downloads the full bundle)"
+            );
+            Vec::new()
+        }
+    };
 
     let patch_descriptor = resolve_hbc_patch_descriptor(
         current_bundle.as_ref(),
@@ -504,7 +636,10 @@ struct UpdateCheckParams {
 /// (the state machine is identical in both). Pure/synchronous -- no DB or S3 access, which
 /// is why `tests/decision_tests.rs` can test it against the real package via fixtures.
 /// `candidates` must ALREADY be filtered by the caller on platform/channel/enabled/
-/// version-or-fingerprint match, and sorted by id DESC.
+/// version-or-fingerprint match. The order is NOT relied upon: both candidate loops below take
+/// the maximum id, exactly as upstream does, so a caller ordering that disagrees with the
+/// byte-wise `<`/`>` used here (the id columns are case-insensitive `ascii_general_ci`, these
+/// comparisons are not) cannot change the outcome.
 pub enum Decision {
     Update(Bundle),
     Rollback(Bundle),
@@ -534,10 +669,19 @@ pub fn decide_update(
         None => false,
     };
 
-    // update_candidate: highest-ID candidate (> client_bundle_id) eligible for the cohort
+    // update_candidate: highest-ID candidate (> client_bundle_id) eligible for the cohort.
+    // Reference: findLatestEligibleUpdateCandidate -- `if (bundle.id.localeCompare(bundleId) > 0
+    // && isEligibleUpdateCandidate(bundle, cohort) && (!updateCandidate ||
+    // bundle.id.localeCompare(updateCandidate.id) > 0)) updateCandidate = bundle;`
+    //
+    // Upstream scans the whole list and keeps the maximum rather than stopping at the first hit,
+    // and so do we. An early `break` would be correct only while the caller's ordering agrees
+    // with the `>` used here; the id columns are `ascii_general_ci` (case-INSENSITIVE) whereas
+    // this comparison is byte-wise, so `ORDER BY id DESC` and this loop can disagree for
+    // mixed-case hex ids. Taking the maximum makes the result independent of the input order.
     let mut update_candidate: Option<&Bundle> = None;
     for b in candidates {
-        if b.id.as_str() > client_bundle_id {
+        if b.id.as_str() > client_bundle_id && update_candidate.is_none_or(|uc| b.id > uc.id) {
             let targets = parse_target_cohorts(&b.target_cohorts);
             if is_cohort_eligible_for_update(
                 &b.id,
@@ -546,25 +690,24 @@ pub fn decide_update(
                 targets.as_deref(),
             ) {
                 update_candidate = Some(b);
-                break; // candidates are sorted id DESC, so the first match is the newest
             }
         }
     }
 
-    // rollback_candidate: highest-ID candidate (< client_bundle_id) eligible for the cohort
+    // rollback_candidate: highest-ID candidate (< client_bundle_id) -- NO cohort/rollout test.
+    // Reference: appVersionStrategy/fingerprintStrategy --
+    //   `else if (bundleId !== NIL_UUID && b.id.localeCompare(bundleId) < 0) {
+    //        if (!rollbackCandidate || b.id.localeCompare(rollbackCandidate.id) > 0) ... }`
+    // Only `updateCandidate` goes through `isEligibleUpdateCandidate`; the rollback target is
+    // selected purely by id. Filtering it by cohort would turn a one-step rollback into a full
+    // native rollback (INIT_BUNDLE_ROLLBACK_UPDATE_INFO) whenever the older bundle happens to
+    // sit outside the rollout -- which is exactly the situation a rollback exists for.
+    // As with `update_candidate`, upstream keeps the maximum over the whole list rather than
+    // stopping at the first hit, so this does not depend on the caller's ordering either.
     let mut rollback_candidate: Option<&Bundle> = None;
     for b in candidates {
-        if b.id.as_str() < client_bundle_id {
-            let targets = parse_target_cohorts(&b.target_cohorts);
-            if is_cohort_eligible_for_update(
-                &b.id,
-                cohort,
-                Some(b.rollout_cohort_count),
-                targets.as_deref(),
-            ) {
-                rollback_candidate = Some(b);
-                break;
-            }
+        if b.id.as_str() < client_bundle_id && rollback_candidate.is_none_or(|rc| b.id > rc.id) {
+            rollback_candidate = Some(b);
         }
     }
 
@@ -607,6 +750,18 @@ async fn evaluate_update(
         params.cohort.as_deref(),
         &params.bundle_id,
         &params.min_bundle_id,
+    );
+
+    // Observability only: a counter increment, no effect on the decision or the response.
+    // InitRollback is folded into ROLLBACK because that is what the client is told.
+    record_update_check(
+        &params.app_name,
+        &params.platform,
+        match &decision {
+            Decision::Update(_) => UpdateOutcome::Update,
+            Decision::Rollback(_) | Decision::InitRollback => UpdateOutcome::Rollback,
+            Decision::NoUpdate => UpdateOutcome::UpToDate,
+        },
     );
 
     match decision {
@@ -704,11 +859,7 @@ async fn check_app_version_helper(
     let filtered_candidates: Vec<Bundle> = candidates
         .into_iter()
         .filter(|b| {
-            if let Some(ref target) = b.target_app_version {
-                satisfies(&parsed_client_version, target)
-            } else {
-                false
-            }
+            matches_target_app_version(b.target_app_version.as_deref(), &parsed_client_version)
         })
         .collect();
 
@@ -815,9 +966,12 @@ async fn check_fingerprint_helper(
             .into_response();
     }
 
-    // Query candidates matching app, platform, channel, enabled, id >= min_bundle_id, AND exact fingerprint_hash
+    // Query candidates matching app, platform, channel, enabled, id >= min_bundle_id, AND exact
+    // fingerprint_hash. `fingerprint_hash <> ''` reproduces upstream's `!b.fingerprintHash` arm:
+    // a stored empty hash is falsy in JS and must not match even an empty request hash (a NULL
+    // hash is already excluded by the `=` comparison).
     let candidates_result = sqlx::query_as::<_, Bundle>(
-        "SELECT * FROM bundles WHERE app_name = ? AND platform = ? AND channel = ? AND enabled = 1 AND id >= ? AND fingerprint_hash = ? ORDER BY id DESC"
+        "SELECT * FROM bundles WHERE app_name = ? AND platform = ? AND channel = ? AND enabled = 1 AND id >= ? AND fingerprint_hash = ? AND fingerprint_hash <> '' ORDER BY id DESC"
     )
     .bind(&app_name)
     .bind(&platform)
@@ -834,6 +988,14 @@ async fn check_fingerprint_helper(
             return (StatusCode::INTERNAL_SERVER_ERROR, "Database error").into_response();
         }
     };
+
+    // Redundant with the SQL predicates above, but it keeps the fingerprint match rule in one
+    // place (`matches_fingerprint`) -- the same function `tests/decision_tests.rs` replays -- so
+    // the two cannot drift apart, and it does not depend on the DB collation.
+    let candidates: Vec<Bundle> = candidates
+        .into_iter()
+        .filter(|b| matches_fingerprint(b.fingerprint_hash.as_deref(), &fingerprint_hash))
+        .collect();
 
     let params = UpdateCheckParams {
         app_name,

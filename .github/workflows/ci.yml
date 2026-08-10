@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+  checks: write
+  issues: write
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -27,5 +32,93 @@ jobs:
       - name: Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
 
+      # OTA_REQUIRE_DOCKER_TESTS=1 makes a missing Docker daemon a hard failure. Without
+      # it the MySQL-backed tests skip themselves, and a runner outage would show up as a
+      # silent green rather than as the gap in coverage it actually is.
       - name: Test
+        env:
+          OTA_REQUIRE_DOCKER_TESTS: '1'
         run: cargo test --all-features
+
+      # Catches a broken `include` list or missing metadata before a tag is cut,
+      # since a bad crates.io publish cannot be undone.
+      - name: Package (crates.io dry run)
+        run: cargo package --locked
+
+  msrv:
+    name: MSRV (1.94.1)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.94.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: msrv
+      - run: cargo check --all-targets --locked
+
+  audit:
+    name: cargo audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: rustsec/audit-check@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  docker:
+    name: Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # The image is the primary install path for most users; a Dockerfile that
+      # stopped building would otherwise only be discovered at release time.
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: rn-ota-server-rust:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test the image
+        run: |
+          set -euo pipefail
+          out=$(docker run --rm rn-ota-server-rust:ci --version)
+          echo "$out"
+          [[ "$out" == rn-ota-server-rust* ]]
+          # Startup must fail loudly, not hang, when APPS is unset.
+          if docker run --rm -e APPS= rn-ota-server-rust:ci; then
+            echo "expected a non-zero exit with no configuration" >&2
+            exit 1
+          fi
+
+  release-dry-run:
+    name: Release packaging (dry run)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: release-dry-run
+
+      # Mirrors the packaging step in release.yml so a broken archive layout is
+      # caught on a pull request rather than on a tag, where it is too late.
+      - name: Build and package
+        run: |
+          set -euo pipefail
+          cargo build --release --locked
+          STAGE="rn-ota-server-rust-ci-x86_64-unknown-linux-gnu"
+          mkdir -p "$STAGE"
+          cp target/release/rn-ota-server-rust "$STAGE/"
+          cp README.md LICENSE .env.example "$STAGE/"
+          cp -r migrations "$STAGE/"
+          tar czf "${STAGE}.tar.gz" "$STAGE"
+          shasum -a 256 "${STAGE}.tar.gz" > "${STAGE}.tar.gz.sha256"
+          shasum -a 256 -c "${STAGE}.tar.gz.sha256"
+          tar tzf "${STAGE}.tar.gz"
+          "./${STAGE}/rn-ota-server-rust" --version
