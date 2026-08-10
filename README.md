@@ -303,9 +303,32 @@ pm2 start ecosystem.config.cjs --env production
 
 ### Migrations
 
-Migrations run automatically at startup, so the database user needs DDL rights. Two of them
-(`bundle_check_constraints`, `id_ascii_bin_collation`) were authored without access to a live MySQL
-instance; read their header comments before applying them to a database that already holds data.
+Migrations run automatically at startup, so the database user needs DDL rights.
+
+All four migrations are now verified against a live MySQL 8, both on an empty database and on one
+already holding data. Two things to check **before** upgrading an existing database, because both
+fail in ways that stop the server from starting:
+
+```sql
+-- Non-ASCII ids. Under MySQL's default strict sql_mode the migration aborts and touches
+-- nothing; under sql_mode='' it silently rewrites them, mangling primary keys.
+SELECT id FROM bundles WHERE id <> CONVERT(id USING ascii);
+
+-- Rows that violate the CHECK constraints. If any exist, no constraint is created at all.
+SELECT id FROM bundles
+ WHERE (target_app_version IS NULL AND fingerprint_hash IS NULL)
+    OR rollout_cohort_count < 0 OR rollout_cohort_count > 1000;
+```
+
+Both should return zero rows. If your database ever failed to start on the
+`id_ascii_bin_collation` migration, see the recovery procedure in that file's header — it may be
+running with two foreign keys missing.
+
+> Note: `20260722000000_bundle_check_constraints.sql` still opens with a warning that it was never
+> tested against a live MySQL. That warning is now out of date, but the file is deliberately left
+> byte-for-byte as published: sqlx records a checksum of each applied migration, and it is the one
+> file that did apply successfully in the field, so editing even a comment would make sqlx refuse
+> to start until every operator hand-patched the stored hash. Trust this section over that header.
 
 ---
 
