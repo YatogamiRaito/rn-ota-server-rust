@@ -48,6 +48,23 @@
 -- ignored fixture case, rather than left implicit.
 --
 -- ---------------------------------------------------------------------------
+-- DEPENDS ON A STRICT sql_mode -- verified on MySQL 8.0.46
+-- ---------------------------------------------------------------------------
+-- These MODIFY COLUMNs convert the columns from utf8mb4 to ascii. Any existing ID
+-- holding a non-ASCII byte therefore cannot be represented after the change.
+--   * With MySQL 8's DEFAULT sql_mode (STRICT_TRANS_TABLES), the ALTER aborts with
+--     ERROR 1366 "Incorrect string value" and no data is touched -- the safe outcome.
+--   * With a non-strict sql_mode (e.g. sql_mode=''), MySQL SILENTLY replaces each
+--     non-ASCII character with '?': 'ünïcode-...' becomes '??n??code-...'. That mangles
+--     primary keys and can collapse two distinct IDs into one. Measured, both ways.
+-- Do not deploy this migration with a relaxed sql_mode. `bundles.id` is a UUID and
+-- api.rs::validate_id rejects non-ASCII, so this only bites databases that predate that
+-- validation -- but on those it bites silently. Find them first with:
+--   SELECT id FROM bundles WHERE id <> CONVERT(id USING ascii);
+-- If the ALTER does abort on 1366, the database is left in the damaged state described
+-- below (FKs dropped); the repair notes apply unchanged.
+--
+-- ---------------------------------------------------------------------------
 -- IF YOUR DATABASE ALREADY TRIED THE BROKEN VERSION OF THIS MIGRATION -- READ THIS
 -- ---------------------------------------------------------------------------
 -- The first published revision of this file was invalid SQL. It wrote
@@ -79,13 +96,39 @@
 --   DELETE FROM _sqlx_migrations WHERE version = 20260722010000 AND success = 0;
 --
 -- Then start the server: this migration re-runs from the top and restores both foreign
--- keys itself. Steps 1 and 2 are read-only and safe to run against a healthy database.
+-- keys itself -- its FK drops are conditional precisely so that this works (verified on
+-- a reproduction of the damaged state). Steps 1 and 2 are read-only and safe to run
+-- against a healthy database.
 
 -- FKs are dropped first to allow the collation change
 -- (MySQL does not allow MODIFY COLUMN to change collation while related columns differ).
-ALTER TABLE bundle_patches
-  DROP FOREIGN KEY bundle_patches_bundle_id_fk,
-  DROP FOREIGN KEY bundle_patches_base_bundle_id_fk;
+--
+-- The drops are conditional. MySQL 8.0 has no `DROP FOREIGN KEY IF EXISTS`, and a plain
+-- `ALTER TABLE ... DROP FOREIGN KEY` on a key that is already gone fails with ERROR 1091
+-- -- which is exactly the state the broken first revision of this migration left behind
+-- (see the repair notes above). Without this guard, deleting the `success = 0` row would
+-- not be enough: the migration would fail again on its very first statement and the
+-- operator would have to re-create both foreign keys by hand before it could proceed.
+-- Prepared statements are used because IF() cannot gate DDL directly.
+SET @fk_bundle_id := (
+  SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
+   WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'bundle_patches'
+     AND CONSTRAINT_NAME = 'bundle_patches_bundle_id_fk' AND CONSTRAINT_TYPE = 'FOREIGN KEY');
+SET @sql := IF(@fk_bundle_id > 0,
+  'ALTER TABLE bundle_patches DROP FOREIGN KEY bundle_patches_bundle_id_fk', 'DO 0');
+PREPARE drop_fk_bundle_id FROM @sql;
+EXECUTE drop_fk_bundle_id;
+DEALLOCATE PREPARE drop_fk_bundle_id;
+
+SET @fk_base_bundle_id := (
+  SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
+   WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'bundle_patches'
+     AND CONSTRAINT_NAME = 'bundle_patches_base_bundle_id_fk' AND CONSTRAINT_TYPE = 'FOREIGN KEY');
+SET @sql := IF(@fk_base_bundle_id > 0,
+  'ALTER TABLE bundle_patches DROP FOREIGN KEY bundle_patches_base_bundle_id_fk', 'DO 0');
+PREPARE drop_fk_base_bundle_id FROM @sql;
+EXECUTE drop_fk_base_bundle_id;
+DEALLOCATE PREPARE drop_fk_base_bundle_id;
 
 ALTER TABLE bundles
   MODIFY COLUMN id CHAR(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL;

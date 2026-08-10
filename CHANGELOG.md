@@ -113,15 +113,45 @@ All notable changes to this project are documented here. The format follows
 - Payload validation on `POST`/`PATCH` (id shape, text length against the `TEXT` limit, array
   bounds) closes a set of 500s and silent truncations.
 
-### Operators: recovering from a failed 1.0.0 migration
+### Operators: read before upgrading
 
-If a deployment ever attempted the `id_ascii_bin_collation` migration, it stopped partway: the
-first `ALTER TABLE` committed before the invalid statement failed. Such a database now has a
-`success = 0` row in `_sqlx_migrations` **and has permanently lost both foreign keys on
-`bundle_patches`**, so orphaned patch rows can have accumulated undetected since.
+**1. Recovering from a failed 1.0.0 migration.** If a deployment ever attempted the
+`id_ascii_bin_collation` migration, it stopped partway: the first `ALTER TABLE` committed before
+the invalid statement failed. Such a database has a `success = 0` row in `_sqlx_migrations` **and
+has permanently lost both foreign keys on `bundle_patches`**, so orphaned patch rows may have
+accumulated undetected since.
 
-Remediation steps are in the header of
-`migrations/20260722010000_id_ascii_bin_collation.sql`.
+The migration's FK drops are now conditional, so clearing the failed row is enough for it to
+repair itself — this was verified against a reproduction of the damaged state. The full
+copy-pasteable procedure (detect, back up, remove orphans, clear the row, verify) is in the header
+of `migrations/20260722010000_id_ascii_bin_collation.sql`. Its detection and inspection steps are
+read-only and safe to run against a healthy database.
+
+**2. Do not run migrations with a relaxed `sql_mode`.** This release converts the id columns from
+`utf8mb4` to `ascii`. Under MySQL 8's default `STRICT_TRANS_TABLES` an id containing a non-ASCII
+byte aborts the `ALTER` with error 1366 and nothing is touched — the safe outcome. Under
+`sql_mode=''` MySQL **silently** replaces each non-ASCII character with `?`, which mangles primary
+keys and can collapse two distinct ids into one. Check first:
+
+```sql
+SELECT id FROM bundles WHERE id <> CONVERT(id USING ascii);
+```
+
+If that returns rows, resolve them before upgrading.
+
+**3. Check the `bundle_check_constraints` migration's preconditions.** If any existing row violates
+the constraints it adds, the `ALTER` fails and **no constraint is created**, so the server will not
+start. Verified against MySQL 8.0.46; find offending rows with:
+
+```sql
+SELECT id FROM bundles
+ WHERE (target_app_version IS NULL AND fingerprint_hash IS NULL)
+    OR rollout_cohort_count < 0 OR rollout_cohort_count > 1000;
+```
+
+Both previously-unverified migrations have now been exercised against a live MySQL 8, on a fresh
+database and on one already holding data. Their bytes are unchanged from 1.0.0 where they had
+already applied successfully, so no `_sqlx_migrations` checksum is invalidated by this release.
 
 ## [1.0.0] - 2026-08-05
 
