@@ -27,7 +27,7 @@ Examples of unacceptable behaviour:
 ## Enforcement
 
 Instances of abusive, harassing or otherwise unacceptable behaviour may be reported to the project
-maintainer at **ebubekirkaraca@aygyonetim.com**. All complaints will be reviewed and investigated
+maintainer at **ebubekir1999karaca@gmail.com**. All complaints will be reviewed and investigated
 promptly and fairly, and the reporter's privacy and security will be respected.
 
 Maintainers who do not follow or enforce this Code of Conduct in good faith may face temporary or

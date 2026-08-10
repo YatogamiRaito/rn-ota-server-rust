@@ -10,7 +10,7 @@ Please **do not** open a public issue for a security problem.
 
 Use GitHub's private reporting — *Security* → *Report a vulnerability* on
 [the repository](https://github.com/YatogamiRaito/rn-ota-server-rust/security/advisories/new) —
-or email **ebubekirkaraca@aygyonetim.com**.
+or email **ebubekir1999karaca@gmail.com**.
 
 Include what you can: affected version, a description of the impact, and reproduction steps. You
 will get an acknowledgement within a few days and a fix or an explanation before any public
