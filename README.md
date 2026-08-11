@@ -130,6 +130,8 @@ loaded if present).
 | `HOST`         | no       | `127.0.0.1`                                         | Bind address                               |
 | `PORT`         | no       | `3010`                                              | Bind port                                  |
 | `R2_ENDPOINT`  | no       | —                                                   | Shared S3-compatible endpoint (fallback)   |
+| `R2_REGION`    | no       | `auto`                                              | Shared signing region (fallback)           |
+| `R2_FORCE_PATH_STYLE` | no | follows the endpoint                                | Shared addressing style (fallback)         |
 
 ### Observability
 
@@ -155,6 +157,33 @@ fixed set of classes, `app` is restricted to the names in `APPS` (anything else 
 | `DB_MIN_CONNECTIONS`      | `2`     |
 | `DB_ACQUIRE_TIMEOUT_SECS` | `3`     |
 | `DB_IDLE_TIMEOUT_SECS`    | `60`    |
+
+### Storage timeouts
+
+Every call to S3/R2 is bounded by these; an endpoint that accepts the connection and then goes
+quiet would otherwise stall the device update-check waiting on it. Values are seconds and must be
+at least 1 — there is no "unlimited" setting. Each limit must fit inside the one containing it
+(`CONNECT` ≤ `ATTEMPT`, `READ` ≤ `ATTEMPT`, `ATTEMPT` ≤ `OPERATION`); startup fails otherwise.
+
+| Variable                         | Default | Meaning                                                       |
+| -------------------------------- | ------- | ------------------------------------------------------------- |
+| `STORAGE_CONNECT_TIMEOUT_SECS`   | `3`     | Establishing the TCP/TLS connection                            |
+| `STORAGE_READ_TIMEOUT_SECS`      | `5`     | Waiting for the first byte of the response                     |
+| `STORAGE_ATTEMPT_TIMEOUT_SECS`   | `10`    | One attempt; retries are counted separately                    |
+| `STORAGE_OPERATION_TIMEOUT_SECS` | `20`    | The whole call, retries and body download included             |
+
+If a slow but healthy store is being cut off, raise `STORAGE_OPERATION_TIMEOUT_SECS` first.
+
+### Presigned URL lifetime
+
+| Variable                       | Default | Meaning                                              |
+| ------------------------------ | ------- | ---------------------------------------------------- |
+| `STORAGE_PRESIGN_EXPIRY_SECS`  | `3600`  | How long a download URL handed to a device stays valid |
+
+Accepted range is 60 s to 604800 s (7 days), checked at startup. The upper bound is the SigV4
+maximum that both S3 and R2 enforce; the lower one keeps a URL alive long enough to survive a
+client retry or a slow network before the download starts. Shorter is tighter if a leaked URL
+worries you — the device fetches the bundle immediately after the update-check.
 
 ### Rate limiting
 
@@ -189,9 +218,34 @@ beta.app   ->  BETA_APP
 | `R2_SECRET_ACCESS_KEY_<SUFFIX>` | yes      | S3/R2 secret key                                          |
 | `R2_BUCKET_NAME_<SUFFIX>`       | yes      | Bucket holding this app's bundles                         |
 | `R2_ENDPOINT_<SUFFIX>`          | no       | Per-app endpoint; falls back to `R2_ENDPOINT`             |
+| `R2_REGION_<SUFFIX>`            | no       | Per-app signing region; falls back to `R2_REGION`, then `auto` |
+| `R2_FORCE_PATH_STYLE_<SUFFIX>`  | no       | Per-app addressing style; falls back to `R2_FORCE_PATH_STYLE` |
 
 App names appear in URL paths, so whitespace and `/` are rejected at startup. kebab-case is
 recommended. A missing variable fails startup with an explicit message naming the variable.
+
+#### Choosing a region and an addressing style
+
+`auto` is Cloudflare R2's convention and is the default, so **R2 and MinIO deployments need
+neither variable**. AWS S3 does: the SigV4 credential scope has to name the bucket's real region,
+and with no endpoint configured the SDK builds the hostname from it too — `auto` there produces
+`<bucket>.s3.auto.amazonaws.com`, which does not resolve.
+
+`R2_FORCE_PATH_STYLE` defaults to whether an endpoint is set, which is the right answer for each
+backend: R2 and MinIO are reached through an endpoint and want the bucket in the path (MinIO
+cannot serve virtual-hosted style without wildcard DNS), while AWS S3 has no endpoint override and
+prefers virtual-hosted style, path style being its legacy alternative. Set it only to override.
+
+```bash
+# AWS S3
+APPS=main-app
+R2_REGION_MAIN_APP=eu-central-1
+# no R2_ENDPOINT: the SDK builds <bucket>.s3.eu-central-1.amazonaws.com
+
+# MinIO
+R2_ENDPOINT=http://minio.internal:9000
+# region and addressing style: leave both unset
+```
 
 Example:
 
@@ -345,9 +399,11 @@ cargo clippy --all-targets --all-features -- -D warnings     # lint
 cargo fmt --all                                              # format
 ```
 
-The parity tests are pure and synchronous — they need neither MySQL nor S3, so `cargo test` runs
-anywhere. One test (`r2_manual_verification`) is `#[ignore]`d by default and hits a real bucket;
-see the comment at the top of that file to run it.
+The parity tests are pure and synchronous, and the MySQL- and MinIO-backed integration tests skip
+themselves when Docker is unavailable, so `cargo test` runs anywhere. That skip is a trap in CI —
+see [CONTRIBUTING.md](CONTRIBUTING.md) for `OTA_REQUIRE_DOCKER_TESTS=1` and the rest of the test
+tiers. One test (`r2_manual_verification`) is `#[ignore]`d by default and hits a real bucket; see
+the comment at the top of that file to run it.
 
 ### Regenerating the fixtures
 

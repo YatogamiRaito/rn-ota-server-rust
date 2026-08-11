@@ -162,6 +162,41 @@ exemption. Run it with `cargo test -- --ignored` to see the deviation demonstrat
 
 ---
 
+### 3.4 `fileUrl: null` is reserved for the reset-to-built-in shape
+
+`fileUrl` is nullable in the published type — `@hot-updater/core` 0.35.8, `dist/index.d.mts:179`:
+`interface AppUpdateAvailableInfo { ...; fileUrl: string | null; ... }` — but in the protocol it
+does not mean "no URL available". It means **reset to the bundle built into the binary**, and the
+device acts on it: `android/.../BundleFileStorageService.kt` (`if (fileUrl.isNullOrEmpty())`) and
+`ios/.../BundleFileStorageService.swift` (`guard let validFileUrl = fileUrl else`) clear the bundle
+URL, reset the metadata, **delete every downloaded bundle** and report success. `checkForUpdate.ts`
+passes the null straight through without a null check; only `isResetToBuiltInResponse` inspects it,
+and that additionally requires `status === "ROLLBACK" && id === NIL_UUID`.
+
+**Upstream never pairs it with `UPDATE`.** `@hot-updater/server` `src/storageAccess.ts`
+`resolveFileUrl` returns null only when `storageUri` itself is null and **throws** on every real
+failure (`"Storage plugin returned empty fileUrl"`, unknown protocol, non-HTTP(S) url), and
+`src/db/pluginCore.ts:359` awaits it with no `try`/`catch` — so a presign failure surfaces as a
+5xx, which `pluginCore.spec.ts:910` pins (`rejects.toThrow("storage read failed")`). The only
+upstream producers of a null `fileUrl` are `INIT_BUNDLE_ROLLBACK_UPDATE_INFO` and
+`withJwtSignedUrl`'s `if (data.id === NIL_UUID || !storageUri)`.
+
+**This server matches that.** `make_response` in `src/routes/check.rs` fails the request when the
+primary bundle cannot be presigned, and the handlers turn that into `500 Storage error`; a failed
+check is retried harmlessly, whereas a null-`fileUrl` `UPDATE` would silently wipe the device's OTA
+state (and, with `shouldForceUpdate`, reload into the same answer indefinitely — the client's loop
+guard compares bundle ids, and the id genuinely is newer than the built-in one). The only response
+this server emits with `file_url: None` is `Decision::InitRollback`, which carries `NIL_UUID` and
+`ROLLBACK` — upstream's `INIT_BUNDLE_ROLLBACK_UPDATE_INFO` shape exactly.
+
+`manifestUrl`, `manifestFileHash` and `changedAssets` are unaffected and still degrade to null on a
+storage failure. That is also upstream's behaviour (`updateArtifacts.ts` `fetchBundleManifest`
+returns null `if (!fileUrl)`, and `resolveChangedAssets` drops the whole set rather than emitting a
+partial one): they are download optimisations, and losing them costs bytes, not correctness.
+
+Guarded by `tests/storage_integration_tests.rs::an_update_response_never_carries_a_null_file_url`
+and `::update_check_fails_loudly_when_a_bundle_points_at_another_apps_bucket`.
+
 ## 4. Procedure for an upstream upgrade
 
 ```bash
@@ -200,6 +235,11 @@ cd ios && pod install
 ---
 
 ## Changelog
+
+- **2026-08-11** — Storage layer hardening. Recorded §3.4: a presign failure for the primary
+  bundle now fails the update-check (5xx) instead of answering `UPDATE` with `fileUrl: null`,
+  matching upstream's `resolveFileUrl`-throws behaviour. Verified against the vendored 0.35.8
+  sources in `tools/fixture-gen/node_modules/@hot-updater/` and the `v0.35.8` RN client.
 
 - **2026-07-29** — Upstream 0.35.1 → 0.35.8. The server-side packages
   (`server`/`js`/`plugin-core`/`core`) turned out to be byte-for-byte identical; no Rust change was

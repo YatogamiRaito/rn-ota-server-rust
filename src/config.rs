@@ -8,13 +8,35 @@ use std::time::Duration;
 pub const APPS_ENV_VAR: &str = "APPS";
 pub const DEFAULT_DATABASE_URL: &str = "mysql://root:password@127.0.0.1:3306/ota_server";
 
+/// Everything needed to address one app's bucket. Passed to `src/storage.rs` as a unit rather
+/// than as loose arguments, so adding a knob here does not ripple through every call site in
+/// `src/routes/check.rs`.
 #[derive(Clone, Debug)]
 pub struct AppStorageConfig {
     pub endpoint: Option<String>,
     pub access_key_id: String,
     pub secret_access_key: String,
     pub bucket_name: String,
+    /// SigV4 signing region. Defaults to `auto`, which is Cloudflare R2's convention.
+    ///
+    /// AWS S3 needs the real region here (`eu-central-1`, …): the credential scope in the
+    /// signature has to name it, and with no endpoint configured the SDK also builds the
+    /// hostname from it — `auto` produced `<bucket>.s3.auto.amazonaws.com`, which does not
+    /// resolve, so stock AWS S3 could not be used at all despite being advertised.
+    pub region: String,
+    /// Put the bucket in the URL path (`https://host/<bucket>/<key>`) instead of the hostname.
+    ///
+    /// Defaults to whether a custom endpoint is set, which is the right answer for each backend
+    /// this server targets: R2 and MinIO are addressed through an endpoint and want path style
+    /// (MinIO cannot do virtual-hosted style without wildcard DNS), while stock AWS S3 has no
+    /// endpoint override and prefers virtual-hosted style, which path style is the legacy
+    /// alternative to. Override it when your deployment disagrees.
+    pub force_path_style: bool,
 }
+
+/// The region assumed when nothing configures one: Cloudflare R2's convention, so existing R2
+/// deployments are unaffected by the region becoming configurable.
+pub const DEFAULT_STORAGE_REGION: &str = "auto";
 
 #[derive(Clone, Debug)]
 pub struct AppConfig {
@@ -49,8 +71,10 @@ impl Config {
             )
         })?;
 
-        // Shared fallback endpoint, used when an app does not define its own.
+        // Shared fallbacks, used when an app does not define its own.
         let global_endpoint = env::var("R2_ENDPOINT").ok();
+        let global_region = env::var("R2_REGION").ok();
+        let global_force_path_style = optional_bool_env("R2_FORCE_PATH_STYLE")?;
 
         let mut apps: HashMap<String, AppConfig> = HashMap::new();
         for raw_name in apps_raw.split(',') {
@@ -75,6 +99,20 @@ impl Config {
             let endpoint = env::var(format!("R2_ENDPOINT_{prefix}"))
                 .ok()
                 .or_else(|| global_endpoint.clone());
+            let region = env::var(format!("R2_REGION_{prefix}"))
+                .ok()
+                .or_else(|| global_region.clone())
+                .unwrap_or_else(|| DEFAULT_STORAGE_REGION.to_string());
+            if region.trim().is_empty() {
+                return Err(format!(
+                    "Invalid R2_REGION_{prefix}: must not be empty (leave it unset for '{DEFAULT_STORAGE_REGION}')."
+                ));
+            }
+            // Unset means "follow the endpoint": path style for R2/MinIO, virtual-hosted style
+            // for stock AWS S3. See `AppStorageConfig::force_path_style`.
+            let force_path_style = optional_bool_env(&format!("R2_FORCE_PATH_STYLE_{prefix}"))?
+                .or(global_force_path_style)
+                .unwrap_or_else(|| endpoint.is_some());
 
             apps.insert(
                 name.to_string(),
@@ -86,6 +124,8 @@ impl Config {
                         access_key_id,
                         secret_access_key,
                         bucket_name,
+                        region,
+                        force_path_style,
                     },
                 },
             );
@@ -96,6 +136,13 @@ impl Config {
                 "{APPS_ENV_VAR} is set but contains no usable app names."
             ));
         }
+
+        // Storage timeouts are read here rather than in `main` so that a bad value fails
+        // startup like every other configuration error. `src/storage.rs` is called from the
+        // request path with no access to this struct, so the validated value is published to it
+        // through `install_timeout_config`.
+        crate::storage::install_timeout_config(StorageTimeoutConfig::from_env()?);
+        crate::storage::install_presign_config(PresignConfig::from_env()?);
 
         Ok(Config {
             database_url,
@@ -163,6 +210,171 @@ impl DbPoolConfig {
         }
 
         Ok(cfg)
+    }
+}
+
+/// Time limits for every call this server makes to S3/R2.
+///
+/// These exist because there were none. The AWS SDK applies no operation timeout of its own,
+/// so an endpoint that accepted the connection and then said nothing left `read_s3_file`
+/// waiting indefinitely — and with it the device update-check that was awaiting it, holding a
+/// request, a task and a connection for as long as the peer kept the socket open. A single
+/// misbehaving storage endpoint could pin the server's resources. Every value below is a bound
+/// on that.
+///
+/// Unlike [`DbPoolConfig`], the defaults deliberately do NOT reproduce previous behaviour:
+/// the previous behaviour was "wait forever", which is the defect. They are sized for the
+/// objects this server actually fetches — `manifest.json` files of a few kilobytes — with
+/// enough headroom for a slow but healthy R2.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StorageTimeoutConfig {
+    /// Limit on establishing the TCP/TLS connection.
+    pub connect_timeout: Duration,
+    /// Limit on the time to the FIRST BYTE of the response, measured from when the request was
+    /// initiated. This is what a black-holing endpoint runs into.
+    pub read_timeout: Duration,
+    /// Limit on one attempt, retries counted individually.
+    pub attempt_timeout: Duration,
+    /// Limit on the whole operation, including every retry AND streaming the response body.
+    ///
+    /// The body part is enforced by `src/storage.rs`, not by the SDK: for a streaming output
+    /// like `GetObject` the SDK's operation timeout ends when the response headers arrive, so
+    /// a peer that sends headers and then stalls mid-body is outside it.
+    pub operation_timeout: Duration,
+}
+
+impl Default for StorageTimeoutConfig {
+    fn default() -> Self {
+        Self {
+            connect_timeout: Duration::from_secs(3),
+            read_timeout: Duration::from_secs(5),
+            attempt_timeout: Duration::from_secs(10),
+            operation_timeout: Duration::from_secs(20),
+        }
+    }
+}
+
+impl StorageTimeoutConfig {
+    pub fn from_env() -> Result<Self, String> {
+        let defaults = Self::default();
+        let cfg = Self {
+            connect_timeout: Duration::from_secs(parse_env(
+                "STORAGE_CONNECT_TIMEOUT_SECS",
+                defaults.connect_timeout.as_secs(),
+            )?),
+            read_timeout: Duration::from_secs(parse_env(
+                "STORAGE_READ_TIMEOUT_SECS",
+                defaults.read_timeout.as_secs(),
+            )?),
+            attempt_timeout: Duration::from_secs(parse_env(
+                "STORAGE_ATTEMPT_TIMEOUT_SECS",
+                defaults.attempt_timeout.as_secs(),
+            )?),
+            operation_timeout: Duration::from_secs(parse_env(
+                "STORAGE_OPERATION_TIMEOUT_SECS",
+                defaults.operation_timeout.as_secs(),
+            )?),
+        };
+
+        // Zero would mean "time out instantly", i.e. no storage at all. There is no spelling
+        // for "no limit" on purpose: that is the state this configuration exists to end.
+        for (name, value) in [
+            ("STORAGE_CONNECT_TIMEOUT_SECS", cfg.connect_timeout),
+            ("STORAGE_READ_TIMEOUT_SECS", cfg.read_timeout),
+            ("STORAGE_ATTEMPT_TIMEOUT_SECS", cfg.attempt_timeout),
+            ("STORAGE_OPERATION_TIMEOUT_SECS", cfg.operation_timeout),
+        ] {
+            if value.is_zero() {
+                return Err(format!("Invalid {name}: must be at least 1."));
+            }
+        }
+
+        // An inner limit larger than the limit containing it can never fire, which would
+        // silently give back the unbounded behaviour for that layer.
+        if cfg.connect_timeout > cfg.attempt_timeout {
+            return Err(format!(
+                "Invalid STORAGE_CONNECT_TIMEOUT_SECS={}: must not exceed STORAGE_ATTEMPT_TIMEOUT_SECS={}.",
+                cfg.connect_timeout.as_secs(),
+                cfg.attempt_timeout.as_secs()
+            ));
+        }
+        if cfg.read_timeout > cfg.attempt_timeout {
+            return Err(format!(
+                "Invalid STORAGE_READ_TIMEOUT_SECS={}: must not exceed STORAGE_ATTEMPT_TIMEOUT_SECS={}.",
+                cfg.read_timeout.as_secs(),
+                cfg.attempt_timeout.as_secs()
+            ));
+        }
+        if cfg.attempt_timeout > cfg.operation_timeout {
+            return Err(format!(
+                "Invalid STORAGE_ATTEMPT_TIMEOUT_SECS={}: must not exceed STORAGE_OPERATION_TIMEOUT_SECS={}.",
+                cfg.attempt_timeout.as_secs(),
+                cfg.operation_timeout.as_secs()
+            ));
+        }
+
+        Ok(cfg)
+    }
+}
+
+/// How long a presigned download URL stays valid.
+///
+/// Deliberately separate from [`StorageTimeoutConfig`]: a timeout bounds how long *this server*
+/// waits on the store, while this bounds how long a URL already handed to a device keeps working.
+/// The two have no reason to move together.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PresignConfig {
+    pub expires_in: Duration,
+}
+
+impl Default for PresignConfig {
+    fn default() -> Self {
+        Self {
+            expires_in: Duration::from_secs(3600),
+        }
+    }
+}
+
+impl PresignConfig {
+    /// Below this a URL is effectively broken rather than merely short-lived: an update-check
+    /// response can sit in a client queue, be retried, or reach a device on a slow network
+    /// before the download begins.
+    pub const MIN_EXPIRY_SECS: u64 = 60;
+    /// The SigV4 protocol maximum, which both AWS S3 and R2 enforce.
+    ///
+    /// DO NOT relax this without following the chain it interrupts. `PresigningConfig::expires_in`
+    /// rejects anything larger, so a value above the maximum does not fail once at startup — it
+    /// fails **every presign, on every update-check, for every device**, and a presign failure is
+    /// what `src/routes/check.rs::make_response` now turns into a 500. So a single typo in
+    /// `STORAGE_PRESIGN_EXPIRY_SECS` would take the whole fleet's update path down until someone
+    /// read the logs.
+    ///
+    /// Worse before that 500 existed, and worth remembering because it is what the bound is really
+    /// protecting against: the same failure used to produce `UPDATE` with `fileUrl: null`, which
+    /// the client reads as "reset to the built-in bundle" — every device deleting its downloaded
+    /// bundles, and looping under `shouldForceUpdate`. See `docs/upstream-parity.md` §3.4.
+    ///
+    /// Checking the value here, where the error can name the variable, closes that from the
+    /// configuration side.
+    pub const MAX_EXPIRY_SECS: u64 = 7 * 24 * 60 * 60;
+
+    pub fn from_env() -> Result<Self, String> {
+        let default = Self::default();
+        let expires_in = parse_env("STORAGE_PRESIGN_EXPIRY_SECS", default.expires_in.as_secs())?;
+
+        if !(Self::MIN_EXPIRY_SECS..=Self::MAX_EXPIRY_SECS).contains(&expires_in) {
+            return Err(format!(
+                "Invalid STORAGE_PRESIGN_EXPIRY_SECS={expires_in}: must be between {} and {} \
+                 seconds ({} days is the SigV4 maximum both S3 and R2 enforce).",
+                Self::MIN_EXPIRY_SECS,
+                Self::MAX_EXPIRY_SECS,
+                Self::MAX_EXPIRY_SECS / 86_400
+            ));
+        }
+
+        Ok(Self {
+            expires_in: Duration::from_secs(expires_in),
+        })
     }
 }
 
@@ -317,6 +529,15 @@ where
     }
 }
 
+/// Like [`parse_bool_env`], but distinguishes "unset" from "set to false" — needed where the
+/// default depends on other configuration rather than being a fixed value.
+fn optional_bool_env(key: &str) -> Result<Option<bool>, String> {
+    match env::var(key) {
+        Ok(_) => parse_bool_env(key, false).map(Some),
+        Err(_) => Ok(None),
+    }
+}
+
 fn parse_bool_env(key: &str, default: bool) -> Result<bool, String> {
     match env::var(key) {
         Ok(raw) => match raw.trim().to_ascii_lowercase().as_str() {
@@ -367,6 +588,26 @@ mod tests {
         assert_eq!(env_key_prefix("mobile-business"), "MOBILE_BUSINESS");
         assert_eq!(env_key_prefix("myApp"), "MYAPP");
         assert_eq!(env_key_prefix("my_app"), "MY_APP");
+    }
+
+    #[test]
+    fn the_default_presign_lifetime_is_one_hour_and_within_its_own_bounds() {
+        let cfg = PresignConfig::default();
+        assert_eq!(cfg.expires_in, Duration::from_secs(3600));
+        assert!(cfg.expires_in.as_secs() >= PresignConfig::MIN_EXPIRY_SECS);
+        assert!(cfg.expires_in.as_secs() <= PresignConfig::MAX_EXPIRY_SECS);
+    }
+
+    /// The defaults have to satisfy the same nesting rule `from_env` enforces on operators,
+    /// or an unconfigured deployment would run with a layer that can never fire.
+    #[test]
+    fn default_storage_timeouts_nest_correctly() {
+        let cfg = StorageTimeoutConfig::default();
+        assert!(!cfg.connect_timeout.is_zero());
+        assert!(!cfg.read_timeout.is_zero());
+        assert!(cfg.connect_timeout <= cfg.attempt_timeout);
+        assert!(cfg.read_timeout <= cfg.attempt_timeout);
+        assert!(cfg.attempt_timeout <= cfg.operation_timeout);
     }
 
     #[test]

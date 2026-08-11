@@ -9,7 +9,7 @@ mod common;
 
 use common::TestApp;
 use rn_ota_server_rust::{
-    config::{AppConfig, AppStorageConfig, Config},
+    config::{AppConfig, AppStorageConfig, Config, DEFAULT_STORAGE_REGION},
     routes::configure_routes,
     AppState,
 };
@@ -27,6 +27,8 @@ async fn test_router_initialization_does_not_panic() {
             access_key_id: "test-key".to_string(),
             secret_access_key: "test-secret".to_string(),
             bucket_name: "test-bucket".to_string(),
+            region: DEFAULT_STORAGE_REGION.to_string(),
+            force_path_style: true,
         },
     };
 

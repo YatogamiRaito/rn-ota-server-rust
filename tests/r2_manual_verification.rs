@@ -7,6 +7,19 @@
 // NOT run in the normal `cargo test` / CI flow (#[ignore]) because it requires real
 // R2 credentials and performs a real network request.
 //
+// WHAT THIS STILL ADDS over `tests/storage_integration_tests.rs`, which covers the same
+// end-to-end path automatically against MinIO and does run in CI:
+//
+//   * that Cloudflare accepts a signature scoped to region `auto` (an R2 convention that
+//     no other S3 implementation shares, and which stock AWS S3 rejects — see
+//     `tests/storage_uri_tests.rs::presigning_without_an_endpoint_signs_for_the_nonexistent_auto_region`);
+//   * that R2's real endpoint accepts path-style addressing over TLS, with a real account
+//     hostname rather than a container on localhost.
+//
+// Neither can be reproduced with MinIO, so this file is kept. It is a release-time smoke
+// test, not a substitute for the MinIO suite: run it when changing anything about signing,
+// the endpoint or the region.
+//
 // RUN:
 //
 //   R2_ENDPOINT=https://<account>.r2.cloudflarestorage.com \
@@ -22,6 +35,7 @@
 //
 // ============================================================================
 
+use rn_ota_server_rust::config::{AppStorageConfig, DEFAULT_STORAGE_REGION};
 use rn_ota_server_rust::storage::get_presigned_url;
 use std::env;
 
@@ -71,15 +85,20 @@ async fn presigned_url_can_access_a_real_r2_bucket() {
 
     let storage_uri = format!("s3://{}/{}", env.bucket, env.object_key);
 
-    let presigned_url = get_presigned_url(
-        env.endpoint.as_deref(),
-        &env.access_key,
-        &env.secret_key,
-        &env.bucket,
-        &storage_uri,
-    )
-    .await
-    .expect("presigned URL generation failed");
+    // R2 is addressed through an endpoint, so this is the path-style, region-`auto`
+    // configuration a real R2 deployment gets from `Config::from_env`.
+    let storage = AppStorageConfig {
+        endpoint: env.endpoint.clone(),
+        access_key_id: env.access_key.clone(),
+        secret_access_key: env.secret_key.clone(),
+        bucket_name: env.bucket.clone(),
+        region: env::var("R2_REGION").unwrap_or_else(|_| DEFAULT_STORAGE_REGION.to_string()),
+        force_path_style: env.endpoint.is_some(),
+    };
+
+    let presigned_url = get_presigned_url(&storage, &storage_uri)
+        .await
+        .expect("presigned URL generation failed");
 
     println!("Generated presigned URL: {}", presigned_url);
 

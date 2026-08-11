@@ -54,7 +54,7 @@ metrics-exporter-prometheus = "0.18.3"
 http-body-util = "0.1.4"
 reqwest = { version = "0.13", default-features = false, features = ["rustls"] }
 rustls-webpki = "0.103.13"
-testcontainers-modules = { version = "0.15.0", features = ["mysql"] }
+testcontainers-modules = { version = "0.15.0", features = ["minio", "mysql"] }
 tower = { version = "0.5.3", features = ["util"] }
 
 # The AWS SDK + sqlx + rustls dependency tree produces enormous intermediate/object

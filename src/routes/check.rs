@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use tracing::{error, warn};
 
 use crate::cohort::is_cohort_eligible_for_update;
+use crate::config::AppStorageConfig;
 use crate::models::{Bundle, BundlePatch};
 use crate::observability::{record_update_check, UpdateOutcome};
 use crate::semver::{coerce_version, satisfies};
@@ -233,10 +234,7 @@ async fn resolve_hbc_patch_descriptor(
     current_bundle: Option<&Bundle>,
     target_patches: &[BundlePatch],
     target_manifest: &Manifest,
-    endpoint: Option<&str>,
-    access_key: &str,
-    secret_key: &str,
-    bucket_name: &str,
+    storage: &AppStorageConfig,
 ) -> Option<HbcPatchDescriptor> {
     let current_bundle = current_bundle?;
     let matching_patch = find_bundle_patch(target_patches, &current_bundle.id)?;
@@ -244,15 +242,7 @@ async fn resolve_hbc_patch_descriptor(
 
     // A presign failure drops only the patch, not the update: the asset keeps its full-download
     // `file` URL. Logged rather than swallowed -- see the note on `resolve_manifest_artifacts`.
-    let patch_url = match get_presigned_url(
-        endpoint,
-        access_key,
-        secret_key,
-        bucket_name,
-        &matching_patch.patch_storage_uri,
-    )
-    .await
-    {
+    let patch_url = match get_presigned_url(storage, &matching_patch.patch_storage_uri).await {
         Ok(url) => url,
         Err(err) => {
             warn!(
@@ -307,24 +297,13 @@ async fn resolve_manifest_artifacts(
     state: &AppState,
     bundle: &Bundle,
     current_bundle_id: &str,
-    endpoint: Option<&str>,
-    access_key: &str,
-    secret_key: &str,
-    bucket_name: &str,
+    storage: &AppStorageConfig,
 ) -> Option<ManifestArtifacts> {
     let manifest_uri = bundle.manifest_storage_uri.as_ref()?;
     let asset_base_uri = bundle.asset_base_storage_uri.as_ref()?;
     let manifest_file_hash = bundle.manifest_file_hash.clone()?;
 
-    let manifest_text = match crate::storage::read_s3_file(
-        endpoint,
-        access_key,
-        secret_key,
-        bucket_name,
-        manifest_uri,
-    )
-    .await
-    {
+    let manifest_text = match crate::storage::read_s3_file(storage, manifest_uri).await {
         Ok(text) => text,
         Err(err) => {
             error!(
@@ -346,15 +325,7 @@ async fn resolve_manifest_artifacts(
         }
     };
 
-    let manifest_url = match get_presigned_url(
-        endpoint,
-        access_key,
-        secret_key,
-        bucket_name,
-        manifest_uri,
-    )
-    .await
-    {
+    let manifest_url = match get_presigned_url(storage, manifest_uri).await {
         Ok(url) => url,
         Err(err) => {
             error!(
@@ -406,15 +377,7 @@ async fn resolve_manifest_artifacts(
 
     let current_manifest: Option<Manifest> = match &current_bundle {
         Some(cb) => match &cb.manifest_storage_uri {
-            Some(cm_uri) => match crate::storage::read_s3_file(
-                endpoint,
-                access_key,
-                secret_key,
-                bucket_name,
-                cm_uri,
-            )
-            .await
-            {
+            Some(cm_uri) => match crate::storage::read_s3_file(storage, cm_uri).await {
                 Ok(text) => match serde_json::from_str::<Manifest>(&text) {
                     Ok(m) => Some(m),
                     Err(err) => {
@@ -474,10 +437,7 @@ async fn resolve_manifest_artifacts(
         current_bundle.as_ref(),
         &target_patches,
         &target_manifest,
-        endpoint,
-        access_key,
-        secret_key,
-        bucket_name,
+        storage,
     )
     .await;
 
@@ -508,15 +468,7 @@ async fn resolve_manifest_artifacts(
             .filter(|d| &d.asset_path == asset_path)
             .map(|d| d.patch.clone());
 
-        let file = match get_presigned_url(
-            endpoint,
-            access_key,
-            secret_key,
-            bucket_name,
-            &asset_storage_uri,
-        )
-        .await
-        {
+        let file = match get_presigned_url(storage, &asset_storage_uri).await {
             Ok(url) => Some(ChangedAssetFile {
                 url,
                 compression: if uses_brotli {
@@ -558,46 +510,47 @@ async fn resolve_manifest_artifacts(
     })
 }
 
-#[allow(clippy::too_many_arguments)]
+/// `Err` here means the response cannot be served at all — see the note on `file_url` below.
 async fn make_response(
     state: &AppState,
     bundle: &Bundle,
     status: &str,
     current_bundle_id: &str,
-    endpoint: Option<&str>,
-    access_key: &str,
-    secret_key: &str,
-    bucket_name: &str,
-) -> AppUpdateInfo {
-    let file_url = match get_presigned_url(
-        endpoint,
-        access_key,
-        secret_key,
-        bucket_name,
-        &bundle.storage_uri,
-    )
-    .await
-    {
-        Ok(url) => Some(url),
-        Err(err) => {
+    storage: &AppStorageConfig,
+) -> Result<AppUpdateInfo, anyhow::Error> {
+    // The ONE place in this file that must not degrade.
+    //
+    // `fileUrl: null` is legal in upstream's type (`AppUpdateAvailableInfo.fileUrl: string | null`
+    // in @hot-updater/core 0.35.8) but in the protocol it MEANS "reset to the built-in bundle":
+    // the native side treats a null url as an instruction to clear the bundle URL, delete every
+    // downloaded bundle and report success (`BundleFileStorageService.kt`, `.swift`). Pairing it
+    // with `UPDATE` therefore does not fail an update, it silently destroys the device's OTA
+    // state -- and with `shouldForceUpdate` the client reloads, asks again, gets the same answer
+    // and loops, because its loop guard only compares bundle ids and the id really is newer than
+    // the built-in one.
+    //
+    // Upstream never emits that combination: `resolveFileUrl` (server/src/storageAccess.ts)
+    // returns null only for a null `storageUri` and throws on every real failure, and
+    // `pluginCore.ts` awaits it with no catch, so a presign failure becomes a 5xx.
+    //
+    // A 5xx is retried harmlessly by the client. So: fail the request. Every OTHER artifact in
+    // this response is an optimisation and still degrades to null -- see the failure policy on
+    // `resolve_manifest_artifacts`.
+    let file_url = get_presigned_url(storage, &bundle.storage_uri)
+        .await
+        .map_err(|err| {
             error!(
-                "Failed to generate presigned url for bundle {}: {}",
-                bundle.id, err
+                bundle_id = %bundle.id,
+                storage_uri = %bundle.storage_uri,
+                error = %err,
+                "Failed to presign the bundle; failing the update-check rather than telling the \
+                 device to update with nothing to download"
             );
-            None
-        }
-    };
+            err
+        })?;
 
-    let manifest_artifacts = resolve_manifest_artifacts(
-        state,
-        bundle,
-        current_bundle_id,
-        endpoint,
-        access_key,
-        secret_key,
-        bucket_name,
-    )
-    .await;
+    let manifest_artifacts =
+        resolve_manifest_artifacts(state, bundle, current_bundle_id, storage).await;
 
     let (manifest_url, manifest_file_hash, changed_assets) = match manifest_artifacts {
         Some(artifacts) => (
@@ -608,7 +561,7 @@ async fn make_response(
         None => (None, None, None),
     };
 
-    AppUpdateInfo {
+    Ok(AppUpdateInfo {
         id: bundle.id.clone(),
         status: status.to_string(),
         // Reference: pluginCore.ts makeResponse -- ROLLBACK is always a force update,
@@ -616,11 +569,11 @@ async fn make_response(
         should_force_update: status == "ROLLBACK" || bundle.should_force_update != 0,
         file_hash: Some(bundle.file_hash.clone()),
         message: bundle.message.clone(),
-        file_url,
+        file_url: Some(file_url),
         manifest_url,
         manifest_file_hash,
         changed_assets,
-    }
+    })
 }
 
 // Struct to store query context/parameters for checking updates
@@ -739,12 +692,16 @@ pub fn decide_update(
     }
 }
 
+/// `Ok(None)` is "no update for this device"; `Err` is "this response cannot be served" and
+/// becomes a 5xx. The two are very different and must not be conflated: see `make_response`.
 async fn evaluate_update(
     state: &AppState,
     params: UpdateCheckParams,
     candidates: Vec<Bundle>,
-) -> Option<AppUpdateInfo> {
-    let app_config = state.config.get_app_config(&params.app_name)?;
+) -> Result<Option<AppUpdateInfo>, anyhow::Error> {
+    let Some(app_config) = state.config.get_app_config(&params.app_name) else {
+        return Ok(None);
+    };
     let storage = &app_config.storage;
 
     let decision = decide_update(
@@ -767,33 +724,16 @@ async fn evaluate_update(
     );
 
     match decision {
-        Decision::Update(b) => Some(
-            make_response(
-                state,
-                &b,
-                "UPDATE",
-                &params.bundle_id,
-                storage.endpoint.as_deref(),
-                &storage.access_key_id,
-                &storage.secret_access_key,
-                &storage.bucket_name,
-            )
-            .await,
-        ),
-        Decision::Rollback(b) => Some(
-            make_response(
-                state,
-                &b,
-                "ROLLBACK",
-                &params.bundle_id,
-                storage.endpoint.as_deref(),
-                &storage.access_key_id,
-                &storage.secret_access_key,
-                &storage.bucket_name,
-            )
-            .await,
-        ),
-        Decision::InitRollback => Some(AppUpdateInfo {
+        Decision::Update(b) => Ok(Some(
+            make_response(state, &b, "UPDATE", &params.bundle_id, storage).await?,
+        )),
+        Decision::Rollback(b) => Ok(Some(
+            make_response(state, &b, "ROLLBACK", &params.bundle_id, storage).await?,
+        )),
+        // The one legitimate `file_url: null`: upstream's INIT_BUNDLE_ROLLBACK_UPDATE_INFO, the
+        // reset-to-built-in shape the null is reserved for. It carries NIL_UUID and ROLLBACK,
+        // which is exactly what the client checks for before treating a null url as a reset.
+        Decision::InitRollback => Ok(Some(AppUpdateInfo {
             id: NIL_UUID.to_string(),
             status: "ROLLBACK".to_string(),
             should_force_update: true,
@@ -803,8 +743,8 @@ async fn evaluate_update(
             manifest_url: None,
             manifest_file_hash: None,
             changed_assets: None,
-        }),
-        Decision::NoUpdate => None,
+        })),
+        Decision::NoUpdate => Ok(None),
     }
 }
 
@@ -877,14 +817,17 @@ async fn check_app_version_helper(
     let result = evaluate_update(&state, params, filtered_candidates).await;
 
     match result {
-        Some(info) => Json(serde_json::to_value(&info).unwrap()).into_response(),
-        None => {
+        Ok(Some(info)) => Json(serde_json::to_value(&info).unwrap()).into_response(),
+        Ok(None) => {
             if supports_explicit_no_update_response(&headers) {
                 Json(serde_json::json!({ "status": "UP_TO_DATE" })).into_response()
             } else {
                 Json(serde_json::json!(null)).into_response()
             }
         }
+        // The bundle exists and was chosen, but no download URL could be produced for it. The
+        // client retries a failed check harmlessly; it would act on a null `fileUrl`.
+        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Storage error").into_response(),
     }
 }
 
@@ -1011,14 +954,17 @@ async fn check_fingerprint_helper(
     let result = evaluate_update(&state, params, candidates).await;
 
     match result {
-        Some(info) => Json(serde_json::to_value(&info).unwrap()).into_response(),
-        None => {
+        Ok(Some(info)) => Json(serde_json::to_value(&info).unwrap()).into_response(),
+        Ok(None) => {
             if supports_explicit_no_update_response(&headers) {
                 Json(serde_json::json!({ "status": "UP_TO_DATE" })).into_response()
             } else {
                 Json(serde_json::json!(null)).into_response()
             }
         }
+        // The bundle exists and was chosen, but no download URL could be produced for it. The
+        // client retries a failed check harmlessly; it would act on a null `fileUrl`.
+        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Storage error").into_response(),
     }
 }
 
