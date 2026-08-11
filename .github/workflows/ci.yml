@@ -78,7 +78,7 @@ jobs:
 
       # The image is the primary install path for most users; a Dockerfile that
       # stopped building would otherwise only be discovered at release time.
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: .
           push: false
