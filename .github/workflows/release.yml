@@ -28,8 +28,13 @@ jobs:
             os: ubuntu-latest
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-24.04-arm
+          # Cross-compiled from the Apple Silicon runner. GitHub retired the
+          # Intel `macos-13` image, and a job requesting it is never assigned a
+          # runner -- it queues forever rather than failing, which would hang
+          # every release. The macOS SDK ships both slices, so targeting
+          # x86_64 from arm64 needs nothing beyond the extra rustup target.
           - target: x86_64-apple-darwin
-            os: macos-13
+            os: macos-latest
           - target: aarch64-apple-darwin
             os: macos-latest
           - target: x86_64-pc-windows-msvc
