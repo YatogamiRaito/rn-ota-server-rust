@@ -4,6 +4,44 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+
+- **The tenant boundary now lives in the schema.** `bundles` moves to a `(app_name, id)`
+  primary key, `bundle_patches` gains an `app_name` column and the same composite key, and both
+  its foreign keys become `(app_name, …) → bundles(app_name, id)`. 1.1.0 closed the cross-tenant
+  holes in application code; this makes them unreachable by construction, so a future query that
+  forgets `AND app_name = ?` cannot reopen one. A patch referencing another app's bundle is now
+  rejected by the database itself rather than by a lookup in `create_bundles`.
+
+### Changed
+
+- **`POST /{app}/hot-updater/api/bundles` no longer answers `409` for an id another app uses.**
+  Under the composite key that id is not this app's business: the two are separate rows, the
+  upsert cannot reach the other tenant's, and refusing the write would leak the fact that
+  somebody else's bundle carries that id. The row-locked ownership check in front of the upsert
+  is removed with it.
+- **`bundles.id` is no longer globally unique** — it is unique per app. Any query that looks a
+  bundle up by id alone is now a bug. Four such queries were scoped as part of this change: the
+  patch lookups in `get_bundle`, `list_bundles` and the update-check path, and the patch delete in
+  `create_bundles`. Each was previously correct on the grounds that ids were global, which is
+  precisely the reasoning this migration invalidates.
+
+### Operators
+
+The migration deletes `bundle_patches` rows whose bundle no longer exists. The foreign keys
+should have made those impossible, but a database that ran the broken first revision of
+`id_ascii_bin_collation` spent time with both keys dropped, so orphans may have accumulated. They
+reference a bundle that is gone and can never be served to a device. Inspect them first if you
+want a record:
+
+```sql
+SELECT p.* FROM bundle_patches p
+ WHERE NOT EXISTS (SELECT 1 FROM bundles b WHERE b.id = p.bundle_id)
+    OR NOT EXISTS (SELECT 1 FROM bundles b WHERE b.id = p.base_bundle_id);
+```
+
 ## [1.1.0] - 2026-08-11
 
 > **If you are running 1.0.0, read the Fixed section before upgrading.** 1.0.0 could not start

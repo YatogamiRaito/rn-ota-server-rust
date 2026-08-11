@@ -438,10 +438,11 @@ async fn resolve_manifest_artifacts(
         None => None,
     };
 
-    // Tenant scope: `bundle_patches` has no `app_name` column (it hangs off `bundles(id)` by FK),
-    // so this query is scoped INDIRECTLY -- `bundle.id` is the target bundle chosen by the
-    // app-scoped candidates query in the caller, never request input. Do not "fix" this by
-    // binding a client-supplied id here; that would reopen a cross-tenant read.
+    // Tenant scope: scoped DIRECTLY by `app_name`, and it must stay that way. Bundle ids are
+    // unique only within an app now that the primary key is `(app_name, id)`, so two tenants
+    // can hold the same id and an unscoped `WHERE bundle_id = ?` would return both their patch
+    // rows. `bundle.app_name` is a trusted value -- it comes from the app-scoped candidates
+    // query in the caller, never from request input.
     //
     // An empty result is ambiguous (no patches recorded vs. the query failed) and the two must
     // not be conflated: losing the patch list costs the device a full HBC download instead of a
@@ -449,8 +450,9 @@ async fn resolve_manifest_artifacts(
     // cannot select the WRONG base -- `find_bundle_patch` matches `base_bundle_id` exactly, so a
     // missing row yields no patch rather than a mismatched one.
     let target_patches: Vec<BundlePatch> = match sqlx::query_as(
-        "SELECT * FROM bundle_patches WHERE bundle_id = ? ORDER BY order_index ASC",
+        "SELECT * FROM bundle_patches WHERE app_name = ? AND bundle_id = ? ORDER BY order_index ASC",
     )
+    .bind(&bundle.app_name)
     .bind(&bundle.id)
     .fetch_all(&state.db)
     .await

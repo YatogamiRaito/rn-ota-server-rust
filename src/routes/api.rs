@@ -341,12 +341,15 @@ pub async fn get_bundle(
 
     match bundle_result {
         Ok(Some(b)) => {
-            // No `app_name` predicate is needed here: the SELECT above already proved
-            // this `bundle_id` belongs to `app_name`, and `bundle_patches.bundle_id` is
-            // a foreign key onto that same row.
+            // `app_name` is REQUIRED, not defensive. A bundle id is unique only within an
+            // app now that the primary key is `(app_name, id)`, so two tenants may hold
+            // the same id and an unscoped `WHERE bundle_id = ?` would return both their
+            // patch sets. This predicate used to be genuinely redundant; the composite key
+            // is exactly what made it load-bearing.
             let patches_result = sqlx::query_as::<_, BundlePatch>(
-                "SELECT * FROM bundle_patches WHERE bundle_id = ? ORDER BY order_index ASC",
+                "SELECT * FROM bundle_patches WHERE app_name = ? AND bundle_id = ? ORDER BY order_index ASC",
             )
+            .bind(&app_name)
             .bind(&bundle_id)
             .fetch_all(&state.db)
             .await;
@@ -1136,8 +1139,13 @@ pub async fn list_bundles(
     let mut client_bundles = Vec::new();
     if !bundles.is_empty() {
         let bundle_ids: Vec<String> = bundles.iter().map(|b| b.id.clone()).collect();
+        // Scoped by `app_name` for the same reason as in `get_bundle`: bundle ids repeat
+        // across apps under the `(app_name, id)` primary key, so an `IN` list of ids alone
+        // would pull in another tenant's patch rows.
         let mut patches_builder =
-            sqlx::QueryBuilder::new("SELECT * FROM bundle_patches WHERE bundle_id IN (");
+            sqlx::QueryBuilder::new("SELECT * FROM bundle_patches WHERE app_name = ");
+        patches_builder.push_bind(&app_name);
+        patches_builder.push(" AND bundle_id IN (");
         let mut separated = patches_builder.separated(", ");
         for id in &bundle_ids {
             separated.push_bind(id);
@@ -1285,30 +1293,27 @@ fn validate_cli_bundle(cb: &CLIBundle) -> Result<(), String> {
     Ok(())
 }
 
-/// Look up which app owns a bundle id, taking a row lock so a concurrent writer cannot
-/// create it between this check and the upsert that follows.
-async fn locked_bundle_owner(
+/// Does this app have a bundle with this id?
+///
+/// Scoped by `app_name` because a bundle id is only meaningful within an app now that the
+/// primary key is `(app_name, id)`. "Belongs to another app" and "does not exist" are the
+/// same answer from here, which is the point: a caller cannot distinguish them, so it
+/// cannot probe for another tenant's ids.
+///
+/// No `FOR UPDATE`. The composite foreign key is what actually guarantees a patch cannot
+/// outlive or cross to another app's bundle; this lookup exists only to turn a dangling
+/// reference into a 400 instead of letting it surface as a foreign-key 500.
+async fn app_owns_bundle(
     tx: &mut sqlx::Transaction<'_, sqlx::MySql>,
+    app_name: &str,
     bundle_id: &str,
-) -> Result<Option<String>, sqlx::Error> {
-    sqlx::query_scalar::<_, String>("SELECT app_name FROM bundles WHERE id = ? FOR UPDATE")
+) -> Result<bool, sqlx::Error> {
+    sqlx::query_scalar::<_, i64>("SELECT 1 FROM bundles WHERE app_name = ? AND id = ?")
+        .bind(app_name)
         .bind(bundle_id)
         .fetch_optional(&mut **tx)
         .await
-}
-
-/// Same lookup without the row lock, for referenced bundles that are only *read*.
-/// A bundle's `app_name` is never updated by any statement in this file, so ownership
-/// cannot change under us; taking `FOR UPDATE` here would only add deadlock surface
-/// between two apps publishing at once.
-async fn bundle_owner(
-    tx: &mut sqlx::Transaction<'_, sqlx::MySql>,
-    bundle_id: &str,
-) -> Result<Option<String>, sqlx::Error> {
-    sqlx::query_scalar::<_, String>("SELECT app_name FROM bundles WHERE id = ?")
-        .bind(bundle_id)
-        .fetch_optional(&mut **tx)
-        .await
+        .map(|found| found.is_some())
 }
 
 pub async fn create_bundles(
@@ -1384,28 +1389,15 @@ pub async fn create_bundles(
         let target_cohorts_json = cb.target_cohorts.as_deref().map(cohorts_to_json);
         let metadata_json = cb.metadata.unwrap_or_else(|| serde_json::json!({}));
 
-        // CROSS-APP ISOLATION. `bundles.id` is the primary key *on its own* — it is not
-        // scoped by `app_name` — and the statement below is an upsert. Without this check
-        // app A could POST a bundle whose id belongs to app B and `ON DUPLICATE KEY
-        // UPDATE` would overwrite every column of B's bundle (storage_uri included) while
-        // leaving `app_name = 'B'`, i.e. push arbitrary content to another tenant's
-        // devices. The `FOR UPDATE` row/gap lock is taken in the same transaction as the
-        // upsert, so a concurrent create of the same id cannot slip in between.
-        match locked_bundle_owner(&mut tx, &cb.id).await {
-            Ok(Some(owner)) if owner != app_name => {
-                return (
-                    StatusCode::CONFLICT,
-                    "Bundle id already belongs to another application",
-                )
-                    .into_response();
-            }
-            Ok(_) => {}
-            Err(err) => {
-                error!("Failed to resolve owner of bundle {}: {}", cb.id, err);
-                return (StatusCode::INTERNAL_SERVER_ERROR, "Database error").into_response();
-            }
-        }
-
+        // CROSS-APP ISOLATION is structural here, not checked. The primary key is
+        // `(app_name, id)`, so `ON DUPLICATE KEY UPDATE` below can only ever match a row
+        // this app already owns -- there is no statement it could write that reaches
+        // another tenant's bundle. An earlier revision needed a row-locked ownership
+        // lookup in front of this upsert and answered 409 when the id belonged to another
+        // app; that guard is gone deliberately, and its 409 with it. Under the composite
+        // key an id used by another tenant is simply not this app's business: the two are
+        // separate rows, and refusing the write would leak the fact that someone else's
+        // bundle carries that id.
         // Upsert bundle
         let insert_bundle_result = sqlx::query(
             r#"
@@ -1460,12 +1452,15 @@ pub async fn create_bundles(
             return (StatusCode::INTERNAL_SERVER_ERROR, "Database write error").into_response();
         }
 
-        // Delete previous patches for the bundle. Not scoped by app_name because the
-        // ownership check above already established that `cb.id` is this app's bundle.
-        let delete_patches_result = sqlx::query("DELETE FROM bundle_patches WHERE bundle_id = ?")
-            .bind(&cb.id)
-            .execute(&mut *tx)
-            .await;
+        // Delete previous patches for the bundle. `app_name` is essential: without it this
+        // statement would delete the patch rows of every app that happens to use the same
+        // bundle id, which the composite primary key now permits.
+        let delete_patches_result =
+            sqlx::query("DELETE FROM bundle_patches WHERE app_name = ? AND bundle_id = ?")
+                .bind(&app_name)
+                .bind(&cb.id)
+                .execute(&mut *tx)
+                .await;
 
         if let Err(err) = delete_patches_result {
             error!("Failed to clear patches for bundle {}: {}", cb.id, err);
@@ -1478,15 +1473,15 @@ pub async fn create_bundles(
                 let patch_id = format!("{}:{}", cb.id, p.base_bundle_id);
                 let order_index = index as i32;
 
-                // CROSS-APP ISOLATION. `bundle_patches.base_bundle_id` is a foreign key
-                // onto `bundles.id`, which is app-agnostic, so an unchecked value lets one
-                // app hang a patch row off another app's bundle — and that row then dies
-                // with the other tenant's bundle through ON DELETE CASCADE. Requiring the
-                // base to be one of *this* app's bundles also turns a dangling reference
-                // into a 400 instead of a foreign-key 500.
-                match bundle_owner(&mut tx, &p.base_bundle_id).await {
-                    Ok(Some(owner)) if owner == app_name => {}
-                    Ok(_) => {
+                // A cross-app base bundle is impossible here: the foreign key is
+                // `(app_name, base_bundle_id) -> bundles(app_name, id)`, so the database
+                // rejects one outright. This lookup is about the error the caller sees --
+                // a 400 naming the problem rather than a foreign-key violation surfacing
+                // as a 500 -- and it deliberately cannot tell "no such bundle" apart from
+                // "another app's bundle".
+                match app_owns_bundle(&mut tx, &app_name, &p.base_bundle_id).await {
+                    Ok(true) => {}
+                    Ok(false) => {
                         return (
                             StatusCode::BAD_REQUEST,
                             "Patch baseBundleId does not refer to a bundle of this application",
@@ -1495,7 +1490,7 @@ pub async fn create_bundles(
                     }
                     Err(err) => {
                         error!(
-                            "Failed to resolve owner of base bundle {}: {}",
+                            "Failed to resolve base bundle {}: {}",
                             p.base_bundle_id, err
                         );
                         return (StatusCode::INTERNAL_SERVER_ERROR, "Database error")
@@ -1506,11 +1501,12 @@ pub async fn create_bundles(
                 let insert_patch_result = sqlx::query(
                     r#"
                     INSERT INTO bundle_patches (
-                        id, bundle_id, base_bundle_id, base_file_hash, patch_file_hash, patch_storage_uri, order_index
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                        id, app_name, bundle_id, base_bundle_id, base_file_hash, patch_file_hash, patch_storage_uri, order_index
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     "#
                 )
                 .bind(&patch_id)
+                .bind(&app_name)
                 .bind(&cb.id)
                 .bind(&p.base_bundle_id)
                 .bind(&p.base_file_hash)

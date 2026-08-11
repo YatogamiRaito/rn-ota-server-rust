@@ -305,8 +305,8 @@ pm2 start ecosystem.config.cjs --env production
 
 Migrations run automatically at startup, so the database user needs DDL rights.
 
-All four migrations are now verified against a live MySQL 8, both on an empty database and on one
-already holding data. Two things to check **before** upgrading an existing database, because both
+All migrations are verified against a live MySQL 8, both on an empty database and on one already
+holding data. Two things to check **before** upgrading an existing database, because both
 fail in ways that stop the server from starting:
 
 ```sql
@@ -320,7 +320,11 @@ SELECT id FROM bundles
     OR rollout_cohort_count < 0 OR rollout_cohort_count > 1000;
 ```
 
-Both should return zero rows. If your database ever failed to start on the
+Both should return zero rows.
+
+The `tenant_scoped_primary_keys` migration also removes `bundle_patches` rows whose bundle no
+longer exists. Those are unusable either way -- they point at a deleted bundle -- but list them
+first if you want a record; the query is in `CHANGELOG.md` under that release's Operators note. If your database ever failed to start on the
 `id_ascii_bin_collation` migration, see the recovery procedure in that file's header — it may be
 running with two foreign keys missing.
 

@@ -32,6 +32,10 @@ how you deploy it is part of its threat model:
 - **Do not expose the server on a public interface without a reverse proxy.** The default `HOST` is
   `127.0.0.1` for that reason; the Docker image sets `0.0.0.0` because the container boundary is
   the proxy boundary there.
+- **Tenant isolation is enforced by the database schema.** `bundles` and `bundle_patches` are
+  keyed on `(app_name, id)`, and the patch foreign keys are composite, so one app's token cannot
+  read, overwrite or attach anything to another app's bundles even if a query somewhere forgets
+  its `app_name` predicate. Bundle ids are unique per app, not globally.
 - **Each app gets its own S3/R2 credentials.** Scope those keys to that app's bucket only — a
   compromised token then cannot reach another app's bundles.
 - **The database user needs DDL rights** because migrations run at startup. If that is not

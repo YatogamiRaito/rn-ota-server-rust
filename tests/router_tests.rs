@@ -85,10 +85,7 @@ async fn migrations_apply_cleanly_to_an_empty_mysql_8_database() {
             .fetch_one(&app.pool)
             .await
             .expect("failed to read _sqlx_migrations");
-    assert_eq!(
-        applied, 4,
-        "all four migrations must be recorded as applied"
-    );
+    assert_eq!(applied, 5, "every migration must be recorded as applied");
 
     let version: String =
         sqlx::query_scalar("SELECT `value` FROM hot_updater_settings WHERE `key` = 'version'")
@@ -199,10 +196,11 @@ async fn id_columns_are_case_insensitive_and_decode_as_strings() {
     assert_eq!(bundles[0].id, first);
 
     sqlx::query(
-        "INSERT INTO bundle_patches (id, bundle_id, base_bundle_id, base_file_hash, patch_file_hash, patch_storage_uri) \
-         VALUES (?, ?, ?, 'bh', 'ph', 's3://test-bucket/p')",
+        "INSERT INTO bundle_patches (id, app_name, bundle_id, base_bundle_id, base_file_hash, patch_file_hash, patch_storage_uri) \
+         VALUES (?, ?, ?, ?, 'bh', 'ph', 's3://test-bucket/p')",
     )
     .bind(format!("{first}:{first}"))
+    .bind("test-app")
     .bind(first)
     .bind(first)
     .execute(&app.pool)
@@ -266,5 +264,82 @@ async fn bundle_check_constraints_are_enforced() {
             .await
             .is_err(),
         "bundles_rollout_cohort_count_check must reject a negative rolloutCohortCount"
+    );
+}
+
+/// The tenant boundary lives in the schema, not only in the queries above it.
+///
+/// `20260811000000_tenant_scoped_primary_keys` moved `bundles` to a `(app_name, id)`
+/// primary key and made both `bundle_patches` foreign keys composite. These are the two
+/// properties that buys, and they are asserted against a real MySQL because neither is
+/// visible in Rust: a future migration could quietly revert them and every unit test
+/// would still pass.
+#[tokio::test]
+async fn the_schema_enforces_the_tenant_boundary() {
+    let Some(app) = TestApp::spawn(&["app-one", "app-two"]).await else {
+        return;
+    };
+
+    let seed = |app_name: &'static str, id: &'static str, uri: &'static str| {
+        let pool = app.pool.clone();
+        async move {
+            sqlx::query(
+                "INSERT INTO bundles (id, app_name, platform, file_hash, storage_uri, target_app_version) \
+                 VALUES (?, ?, 'ios', 'h', ?, '1.0.0')",
+            )
+            .bind(id)
+            .bind(app_name)
+            .bind(uri)
+            .execute(&pool)
+            .await
+        }
+    };
+
+    const SHARED_ID: &str = "aaaa0000-0000-4000-8000-000000000001";
+
+    // (1) The same bundle id in two apps is two rows. Before the composite key this was a
+    // duplicate-key error, which is what forced the tenant check into application code.
+    seed("app-one", SHARED_ID, "s3://one/bundle")
+        .await
+        .expect("app-one must be able to use this id");
+    seed("app-two", SHARED_ID, "s3://two/bundle")
+        .await
+        .expect("app-two must be able to use the SAME id -- ids are per-app now");
+
+    let uris: Vec<String> =
+        sqlx::query_scalar("SELECT storage_uri FROM bundles WHERE id = ? ORDER BY app_name")
+            .bind(SHARED_ID)
+            .fetch_all(&app.pool)
+            .await
+            .unwrap();
+    assert_eq!(
+        uris,
+        vec!["s3://one/bundle".to_string(), "s3://two/bundle".to_string()],
+        "both tenants must keep their own row and their own storage_uri"
+    );
+
+    // (2) A patch may not reference another app's bundle. This was previously enforced
+    // only by a lookup in create_bundles; now the foreign key itself refuses it.
+    seed(
+        "app-one",
+        "aaaa0000-0000-4000-8000-000000000002",
+        "s3://one/base",
+    )
+    .await
+    .unwrap();
+
+    let err = sqlx::query(
+        "INSERT INTO bundle_patches (id, app_name, bundle_id, base_bundle_id, base_file_hash, patch_file_hash, patch_storage_uri) \
+         VALUES ('x:y', 'app-two', ?, 'aaaa0000-0000-4000-8000-000000000002', 'bh', 'ph', 's3://two/p')",
+    )
+    .bind(SHARED_ID)
+    .execute(&app.pool)
+    .await
+    .expect_err("app-two must not be able to base a patch on app-one's bundle");
+
+    let message = err.to_string();
+    assert!(
+        message.contains("1452") || message.to_lowercase().contains("foreign key"),
+        "expected a foreign-key violation from the composite FK, got: {message}"
     );
 }
