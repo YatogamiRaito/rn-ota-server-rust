@@ -61,9 +61,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # The ignore list is duplicated from .cargo/audit.toml because the action
+      # does not read it. Change both together -- the reasoning lives in that file.
       - uses: rustsec/audit-check@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          ignore: RUSTSEC-2023-0071
 
   docker:
     name: Docker image

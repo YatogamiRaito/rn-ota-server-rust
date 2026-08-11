@@ -1,0 +1,25 @@
+# cargo-audit configuration. Keep this in sync with the `ignore` input of the
+# audit job in .github/workflows/ci.yml, so a local `cargo audit` and CI agree.
+
+[advisories]
+ignore = [
+    # RUSTSEC-2023-0071 -- "Marvin Attack" timing sidechannel in the `rsa` crate.
+    #
+    # Reached only through sqlx -> sqlx-mysql -> rsa. There is no patched release:
+    # the advisory has an empty `patched` list, and sqlx 0.9 still depends on the
+    # same crate, so upgrading does not help. The options are to ignore it with a
+    # reason or to drop MySQL support.
+    #
+    # Why it does not apply here: the attack recovers a PRIVATE key by timing
+    # decryption operations. sqlx-mysql uses `rsa` for the opposite operation --
+    # encrypting the database password with the MySQL server's PUBLIC key during
+    # the caching_sha2_password / sha256_password handshake. This process performs
+    # no private-key operations at all, and holds no RSA private key to leak.
+    #
+    # It also only runs on the unencrypted path: with `tls-rustls-ring` enabled
+    # (as it is here) a TLS connection to MySQL skips the RSA exchange entirely.
+    #
+    # Revisit if: sqlx ships a release without `rsa`, the advisory gains a patched
+    # version, or this project ever performs RSA private-key operations itself.
+    "RUSTSEC-2023-0071",
+]
