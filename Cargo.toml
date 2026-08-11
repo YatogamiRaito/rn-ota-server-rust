@@ -1,6 +1,6 @@
 [package]
 name = "rn-ota-server-rust"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
 rust-version = "1.94.1"  # dictated by the aws-smithy-* crates, not by this code
 authors = ["Ebubekir Karaca"]
