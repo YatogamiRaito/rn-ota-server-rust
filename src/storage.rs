@@ -219,6 +219,46 @@ pub async fn get_presigned_url(storage: &AppStorageConfig, storage_uri: &str) ->
     Ok(presigned_req.uri().to_string())
 }
 
+/// Read an object, distinguishing **"it is not there"** from **"the read failed"**.
+///
+/// That distinction is not a nicety — it is upstream's `readText` contract, and the two answers
+/// lead to different HTTP status codes. `@hot-updater/server` `src/storageAccess.ts`:
+///
+/// ```js
+/// const response = await fetch(storageUri);
+/// if (!response.ok) return null;
+/// return response.text();
+/// ```
+///
+/// A missing object reads as `null`, and `fetchBundleManifest` turns that into "no artifacts,
+/// ship the update anyway". Everything else throws and fails the update-check. Collapsing the
+/// two makes a bundle whose manifest was never uploaded answer 500 instead of serving the
+/// update — caught by fixture cases `E05` and `E15`.
+///
+/// Only a `NoSuchKey` is treated as absent. A missing *bucket* under the app's own configured
+/// name is a misconfiguration rather than a missing manifest, and no recorded case pins it, so
+/// it propagates with everything else.
+pub async fn read_s3_file_optional(
+    storage: &AppStorageConfig,
+    storage_uri: &str,
+) -> Result<Option<String>> {
+    match read_s3_file(storage, storage_uri).await {
+        Ok(text) => Ok(Some(text)),
+        Err(err) => {
+            if err
+                .downcast_ref::<aws_sdk_s3::error::SdkError<
+                    aws_sdk_s3::operation::get_object::GetObjectError,
+                >>()
+                .and_then(|sdk_err| sdk_err.as_service_error())
+                .is_some_and(|service_err| service_err.is_no_such_key())
+            {
+                return Ok(None);
+            }
+            Err(err)
+        }
+    }
+}
+
 pub async fn read_s3_file(storage: &AppStorageConfig, storage_uri: &str) -> Result<String> {
     let key = resolve_key(&storage.bucket_name, storage_uri)?;
     let client = client_for(storage);

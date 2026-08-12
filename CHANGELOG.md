@@ -6,8 +6,71 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Security
+
+- **Cohort targeting could be silently dropped, on the device path.** A `target_cohorts` column
+  holding the array as a JSON *string*, or containing one non-string element, parsed as "no
+  cohorts" instead of the list — so a device inside an explicit cohort was judged by the rollout
+  percentage instead. Upstream's `parseTargetCohorts` tolerates both. The rule existed twice, in
+  `api.rs` and in `check.rs`; there is now one copy.
+
+### Fixed
+
+- **A manifest asset hash shorter than two characters panicked the request handler.** `&hash[0..2]`
+  on a one-character or empty hash aborts the connection task under hyper, so the device gets a
+  transport error rather than a status and the update never arrives.
+- **Storage failures during artifact resolution now answer 5xx, matching upstream.** This server
+  degraded to a 200 with fewer artifacts in five recorded cases. Upstream catches exactly one
+  storage failure — a per-asset presign, and only when a bsdiff patch covers that asset — and that
+  single exception is preserved and pinned. See `docs/upstream-parity.md` §3.7.
+- **An absent manifest is no longer conflated with an unreadable one.** Upstream's `readText` maps
+  a missing object to `null` and throws only on a real failure. Without this distinction the change
+  above would have turned every bundle published before the manifest columns existed into a
+  permanent 500 — a total outage for those bundles.
+- Asset storage keys are now encoded the way `encodeURIComponent` encodes them (`+`, `&`, `=` were
+  passed through raw; empty path segments were kept), a backslash before `index.` no longer makes a
+  non-brotli asset look brotli, an empty-string column is treated as absent, bsdiff base ids are
+  matched case-sensitively, and manifest validation matches `isBundleManifest`.
+- **CLI API bodies now match upstream.** `metadata` is omitted rather than emitted as `{}` when the
+  column is null or unparseable; a malformed `patches[]` entry is dropped rather than rejecting the
+  whole publish; `PATCH` accepts the shapes upstream accepts and rejects `{"id": null}` as upstream
+  does; error bodies are JSON (`{"error": "…"}`) rather than `text/plain` — that last one fires on
+  every failure, so a client calling `res.json()` used to get a parse error instead of the message.
+- **`PATCH` semantics now match upstream**: an explicit `null` clears the eight nullable columns
+  and resets `metadata`/`rolloutCohortCount` to their defaults, `patches` is replaceable, and
+  `metadata` deep-merges while `targetCohorts` and `patches` are replaced whole. Two rules in one
+  request body, pinned by a test that patches both at once.
+
 ### Changed
 
+- **`ota_update_check_degraded_total{app,reason}` is now
+  `ota_update_check_errors_total{app,reason,outcome}`.** The old name promised that everything it
+  counted was survivable. That stopped being true when artifact storage failures started answering
+  5xx to match upstream: `degraded_total{reason="manifest_unavailable"}` would have been counting
+  devices denied an update, under a name saying they got one.
+
+  `outcome` is `failed` (the check answered 5xx — the device got no update) or `degraded` (the
+  update shipped; the device merely paid for a bigger download). The same `reason` appears with
+  either, which is the point: a manifest that cannot be *read* fails the check, while one that is
+  absent or malformed only costs the device its asset diff. One counter rather than two keeps
+  `sum(rate(ota_update_check_errors_total[5m]))` answering "is storage misbehaving at all", while
+  `{outcome="failed"}` answers the question asked during an incident — how many devices are being
+  denied updates.
+
+  **Breaking for anything scraping the old series name**, and done now precisely because nothing
+  can be: the counter shipped in 1.2.0 hours earlier and no dashboard exists yet. `reason` also
+  gains `asset_unavailable`, for a changed asset that could not be presigned.
+
+- `ota_update_check_degraded_total{app,reason}` is renamed to
+  **`ota_update_check_errors_total{app,reason,outcome}`**. The old name became self-contradictory
+  once three of its reasons started firing on paths that answer 5xx; `outcome` is `failed` or
+  `degraded` and answers the question an operator actually asks during an incident — how many
+  devices were denied an update, as opposed to charged extra bytes. Renamed now because the metric
+  shipped hours ago in 1.2.0 and nothing is scraping it yet.
+- **Two new parity surfaces are recorded rather than assumed**: artifact resolution (101 cases,
+  `updateArtifacts.ts` + `makeResponse`) and the CLI API request/response bodies (132 cases). Both
+  replay against the real 0.35.12 packages. Fifteen defects between them, all fixed, each with a
+  regression lock named after its symptom.
 - Upstream parity target moved from hot-updater **0.35.8 to 0.35.12**. The only server-side change
   in that range is npm `semver` being replaced with `verkit`, a zero-dependency reimplementation,
   in `plugin-core`'s `semverSatisfies` and in the server's SDK-version header check. The decision

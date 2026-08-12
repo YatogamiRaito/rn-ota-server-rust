@@ -39,8 +39,17 @@ pub const METRIC_HTTP_REQUESTS: &str = "ota_http_requests_total";
 pub const METRIC_HTTP_DURATION: &str = "ota_http_request_duration_seconds";
 /// Counter: update-check decisions, labelled `app`, `platform`, `outcome`.
 pub const METRIC_UPDATE_CHECKS: &str = "ota_update_checks_total";
-/// Counter: update-checks served in a reduced form or failed, labelled `app`, `reason`.
-pub const METRIC_UPDATE_CHECKS_DEGRADED: &str = "ota_update_check_degraded_total";
+/// Counter: update-checks that hit an error, labelled `app`, `reason`, `outcome`.
+///
+/// `outcome` is the label an operator actually reads during an incident: `failed` means the
+/// device was denied an update (the check answered 5xx), `degraded` means it got the update
+/// but paid for a bigger download. `reason` says which subsystem, `outcome` says how bad.
+///
+/// Renamed from `ota_update_check_degraded_total` — see the `[Unreleased]` section of
+/// CHANGELOG.md. The old name promised that everything it counted was survivable, which
+/// stopped being true once artifact storage failures started propagating as 5xx to match
+/// upstream.
+pub const METRIC_UPDATE_CHECK_ERRORS: &str = "ota_update_check_errors_total";
 /// Gauge: connections currently held by the MySQL pool.
 pub const METRIC_DB_POOL_CONNECTIONS: &str = "ota_db_pool_connections";
 /// Gauge: idle connections in the MySQL pool.
@@ -156,28 +165,36 @@ impl UpdateOutcome {
     }
 }
 
-/// Why an update-check was served in a reduced form, or could not be served at all.
+/// WHICH subsystem failed during an update-check.
 ///
-/// These are the paths where the server keeps going after something failed. Each one is
-/// already logged at `warn`, but a log line is not something you can alert on or graph:
-/// a storage backend that has started failing shows up as an unexplained rise in 500s,
-/// or — for the degraded cases — as nothing at all, because the device still gets a
+/// Each of these is already logged at `warn`, but a log line is not something you can alert
+/// on or graph: a storage backend that has started failing shows up as an unexplained rise in
+/// 500s, or — when the check survives — as nothing at all, because the device still gets a
 /// working update and merely pays for the full download.
+///
+/// This says *what* broke. [`ErrorOutcome`] says *how bad it was*. The same reason can appear
+/// with either outcome: an unreadable manifest fails the check, while a malformed one only
+/// costs the device its asset diff.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DegradedReason {
-    /// The primary bundle could not be presigned. This is the one case that is *not* a
-    /// degradation: the request fails with 500 rather than handing the device a null
-    /// `fileUrl`, which it would read as "reset to the built-in bundle". See
-    /// `docs/upstream-parity.md` §3.4.
+    /// The primary bundle could not be presigned. Always `Failed`: the request answers 500
+    /// rather than handing the device a null `fileUrl`, which it would read as "reset to the
+    /// built-in bundle". See `docs/upstream-parity.md` §3.4.
     PresignFailed,
-    /// The manifest could not be fetched or presigned, so no asset diff is possible and
-    /// the device re-downloads every asset.
+    /// A manifest could not be read, presigned, or parsed. `Failed` when the read or presign
+    /// failed (upstream throws there too); `Degraded` when the document was merely absent or
+    /// malformed, which costs the device its asset diff and nothing else.
     ManifestUnavailable,
-    /// A bsdiff patch could not be resolved, so the device downloads the full bundle.
+    /// A bsdiff patch could not be resolved. `Failed` when its presign failed — upstream's
+    /// `resolveHbcPatchDescriptor` has no `try` — and `Degraded` when the patch rows could not
+    /// be loaded, which just means a full download.
     PatchUnavailable,
-    /// The device's current bundle row could not be read, so there is nothing to diff
-    /// against.
+    /// The device's current bundle could not be read, so there is nothing to diff against.
+    /// Always `Degraded`: every asset is marked changed and the update still ships.
     CurrentBundleUnavailable,
+    /// A changed asset could not be presigned. `Failed` unless a bsdiff patch covers that
+    /// asset, which is upstream's one caught storage failure and leaves it `Degraded`.
+    AssetUnavailable,
 }
 
 impl DegradedReason {
@@ -187,19 +204,43 @@ impl DegradedReason {
             DegradedReason::ManifestUnavailable => "manifest_unavailable",
             DegradedReason::PatchUnavailable => "patch_unavailable",
             DegradedReason::CurrentBundleUnavailable => "current_bundle_unavailable",
+            DegradedReason::AssetUnavailable => "asset_unavailable",
         }
     }
 }
 
-/// Record that an update-check was served in a reduced form, or failed outright.
+/// HOW BAD the failure was, from the device's point of view.
 ///
-/// Bounded like the others: `app` folds to `unknown`, and `reason` is a closed enum, so
-/// the series count stays a function of the configuration rather than of traffic.
-pub fn record_update_check_degraded(app: &str, reason: DegradedReason) {
+/// This is the distinction an operator needs during an incident and could not previously make:
+/// "storage is unhappy" and "storage is denying devices their updates" were the same series.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ErrorOutcome {
+    /// The update shipped; the device just transfers more bytes than it needed to.
+    Degraded,
+    /// The check answered 5xx. The device was denied the update and will retry.
+    Failed,
+}
+
+impl ErrorOutcome {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ErrorOutcome::Degraded => "degraded",
+            ErrorOutcome::Failed => "failed",
+        }
+    }
+}
+
+/// Record that an update-check hit an error, and whether the device still got its update.
+///
+/// Bounded like the others: `app` folds to `unknown`, and both `reason` and `outcome` are
+/// closed enums, so the series count stays a function of the configuration rather than of
+/// traffic.
+pub fn record_update_check_error(app: &str, reason: DegradedReason, outcome: ErrorOutcome) {
     counter!(
-        METRIC_UPDATE_CHECKS_DEGRADED,
+        METRIC_UPDATE_CHECK_ERRORS,
         "app" => app_label(app),
         "reason" => reason.as_str(),
+        "outcome" => outcome.as_str(),
     )
     .increment(1);
 }
@@ -425,11 +466,14 @@ mod tests {
     /// its neighbour -- would silently merge two different failures into one series.
     #[test]
     fn degraded_reasons_are_distinct_bounded_labels() {
+        // Every variant, and it must STAY every variant -- `AssetUnavailable` was added
+        // without being listed here, which quietly cost it its coverage.
         let all = [
             DegradedReason::PresignFailed,
             DegradedReason::ManifestUnavailable,
             DegradedReason::PatchUnavailable,
             DegradedReason::CurrentBundleUnavailable,
+            DegradedReason::AssetUnavailable,
         ];
 
         let labels: Vec<&str> = all.iter().map(|r| r.as_str()).collect();
@@ -446,6 +490,30 @@ mod tests {
                 "{label:?} is not a snake_case ASCII label"
             );
         }
+    }
+
+    /// The `outcome` label is the one an operator alerts on: `failed` means devices were
+    /// denied an update, `degraded` means they merely paid for a bigger download. Collapsing
+    /// the two onto one string would put an outage and a slowdown in the same series, which is
+    /// exactly the confusion this label was added to remove.
+    #[test]
+    fn error_outcomes_are_distinct_bounded_labels() {
+        let labels = [
+            ErrorOutcome::Degraded.as_str(),
+            ErrorOutcome::Failed.as_str(),
+        ];
+        assert_eq!(labels, ["degraded", "failed"]);
+
+        let unique: std::collections::HashSet<&&str> = labels.iter().collect();
+        assert_eq!(unique.len(), labels.len());
+    }
+
+    /// The metric was renamed from `ota_update_check_degraded_total`, whose name promised that
+    /// everything it counted was survivable. Pinned so a rename cannot happen by accident: it
+    /// silently breaks every dashboard and alert built on the series.
+    #[test]
+    fn the_update_check_error_metric_keeps_its_name() {
+        assert_eq!(METRIC_UPDATE_CHECK_ERRORS, "ota_update_check_errors_total");
     }
 
     #[test]

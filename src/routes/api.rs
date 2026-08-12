@@ -64,7 +64,14 @@ pub struct ClientBundle {
     pub storage_uri: String,
     pub target_app_version: Option<String>,
     pub fingerprint_hash: Option<String>,
-    pub metadata: serde_json::Value,
+    /// **The one key this response OMITS rather than nulls.** Upstream's `rowToBundle` sets
+    /// `metadata: parseBundleMetadata(record.metadata)`, and `parseBundleMetadata` returns
+    /// `undefined` — not `null` and not `{}` — whenever the column is NULL, holds text that
+    /// is not JSON, or holds something that is not a JSON object. `JSON.stringify` then drops
+    /// the key entirely. Every other field here is always present, carrying `null` when it
+    /// has no value. See [`parse_bundle_metadata`].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Value>,
     pub rollout_cohort_count: i32,
     pub target_cohorts: Option<Vec<String>>,
     pub manifest_storage_uri: Option<String>,
@@ -77,9 +84,106 @@ pub struct ClientBundle {
     pub patch_storage_uri: Option<String>,
 }
 
-fn parse_target_cohorts(val: &Option<serde_json::Value>) -> Option<Vec<String>> {
-    val.as_ref()
-        .and_then(|v| serde_json::from_value(v.clone()).ok())
+/// Upstream's `parseTargetCohorts` (`@hot-updater/server` `dist/db/bundleRows.mjs`):
+///
+/// ```js
+/// const parseTargetCohorts = (value) => {
+///   if (!value) return null;
+///   if (Array.isArray(value)) return value.filter((item) => typeof item === "string");
+///   if (typeof value !== "string") return null;
+///   try {
+///     const parsed = JSON.parse(value);
+///     return Array.isArray(parsed) ? parsed.filter((item) => typeof item === "string") : null;
+///   } catch { return null; }
+/// };
+/// ```
+///
+/// This used to be `serde_json::from_value::<Vec<String>>(v).ok()`, which is a stricter rule
+/// in two ways that both cost real cohorts:
+///
+/// * A column holding the array as a **JSON string** (`"[\"alpha\"]"` rather than
+///   `["alpha"]`) failed outright and yielded `None`. Upstream parses that second layer.
+/// * A single non-string element discarded the **whole** list. Upstream filters the
+///   offending entries and keeps the rest.
+///
+/// Either way the bundle looked untargeted, so a device that an explicit cohort list should
+/// have let in fell back to the rollout percentage. Note an empty JSON array is `Some(vec![])`
+/// — `[]` is truthy in JS — while an empty *string* column is `None`.
+pub fn parse_target_cohorts(val: &Option<serde_json::Value>) -> Option<Vec<String>> {
+    let value = val.as_ref()?;
+
+    let only_strings = |items: &Vec<serde_json::Value>| -> Vec<String> {
+        items
+            .iter()
+            .filter_map(|i| i.as_str().map(str::to_string))
+            .collect()
+    };
+
+    match value {
+        // `!value` in JS: null and the empty string are both as good as absent. A non-empty
+        // string falls through to the JSON.parse branch below.
+        serde_json::Value::Null => None,
+        serde_json::Value::Array(items) => Some(only_strings(items)),
+        serde_json::Value::String(s) if s.is_empty() => None,
+        serde_json::Value::String(s) => match serde_json::from_str::<serde_json::Value>(s) {
+            Ok(serde_json::Value::Array(items)) => Some(only_strings(&items)),
+            _ => None,
+        },
+        // A number, a boolean or an object is neither an array nor a string: `null`.
+        _ => None,
+    }
+}
+
+/// Upstream's `parseBundleMetadata` (`@hot-updater/server` `dist/db/updateArtifacts.mjs`),
+/// which every one of upstream's four SQL adapters runs the `metadata` column through on the
+/// way out via `rowToBundle`:
+///
+/// ```js
+/// const parseBundleMetadata = (value) => {
+///   if (!value) return;                                    // JS falsy -> undefined
+///   let parsedValue = value;
+///   if (typeof parsedValue === "string")
+///     try { parsedValue = JSON.parse(parsedValue); } catch { return; }
+///   if (!parsedValue || typeof parsedValue !== "object" || Array.isArray(parsedValue)) return;
+///   return stripBundleArtifactMetadata(parsedValue);       // identity at 0.35.12
+/// };
+/// ```
+///
+/// `None` here means the key is **omitted** from the response, not serialized as `null` —
+/// that is the whole point of the function, and `ClientBundle::metadata` carries the
+/// `skip_serializing_if` that honours it.
+///
+/// The `!value` guard is JS truthiness, so an empty string, `0` and `false` are all as good
+/// as absent; only a non-empty string is worth trying to parse.
+pub fn parse_bundle_metadata(value: Option<&serde_json::Value>) -> Option<serde_json::Value> {
+    let value = value?;
+
+    // JS falsy: null, "", 0, false. (`undefined` is the `None` already returned above.)
+    let falsy = match value {
+        serde_json::Value::Null => true,
+        serde_json::Value::String(s) => s.is_empty(),
+        serde_json::Value::Bool(b) => !*b,
+        serde_json::Value::Number(n) => n.as_f64() == Some(0.0),
+        _ => false,
+    };
+    if falsy {
+        return None;
+    }
+
+    // A MySQL `JSON` column normally decodes straight to a `Value`, but a bundle written by
+    // an older client (or by a `TEXT` column that was later migrated) can still hold the
+    // JSON as a *string*. Upstream parses that second layer; so does this.
+    let parsed = match value {
+        serde_json::Value::String(s) => serde_json::from_str::<serde_json::Value>(s).ok()?,
+        other => other.clone(),
+    };
+
+    // Only a plain object survives. An array, a scalar or a nested `null` is dropped.
+    if parsed.is_object() {
+        Some(parsed)
+    } else {
+        None
+    }
 }
 
 // Reference: node_modules/@hot-updater/server/src/db/schemaEnhancements.ts (assertBundlePersistenceConstraints).
@@ -122,7 +226,13 @@ fn assert_bundle_persistence_constraints(
     Ok(())
 }
 
-fn map_to_client_bundle(b: Bundle, patches: Vec<BundlePatch>) -> ClientBundle {
+/// The database row → response body mapping, mirroring upstream's `rowToBundle`.
+///
+/// `pub` so `tests/cli_api_parity_tests.rs` can replay the recorded upstream bodies from the
+/// recorded database ROWS rather than only from upstream's finished JSON — the same reason
+/// `calculate_pagination` and `build_cursor_page_query` are exported. It is a pure function
+/// of its two arguments and touches no state.
+pub fn map_to_client_bundle(b: Bundle, patches: Vec<BundlePatch>) -> ClientBundle {
     let client_patches: Vec<ClientPatch> = patches
         .into_iter()
         .map(|p| ClientPatch {
@@ -147,7 +257,7 @@ fn map_to_client_bundle(b: Bundle, patches: Vec<BundlePatch>) -> ClientBundle {
         storage_uri: b.storage_uri,
         target_app_version: b.target_app_version,
         fingerprint_hash: b.fingerprint_hash,
-        metadata: b.metadata.unwrap_or_else(|| serde_json::json!({})),
+        metadata: parse_bundle_metadata(b.metadata.as_ref()),
         rollout_cohort_count: b.rollout_cohort_count,
         target_cohorts: parse_target_cohorts(&b.target_cohorts),
         manifest_storage_uri: b.manifest_storage_uri,
@@ -159,6 +269,27 @@ fn map_to_client_bundle(b: Bundle, patches: Vec<BundlePatch>) -> ClientBundle {
         patch_storage_uri: primary_patch.map(|p| p.patchStorageUri.clone()),
         patches: client_patches,
     }
+}
+
+/// Every error this API emits is a JSON object with a single `error` key, because that is
+/// what upstream emits and what the CLI parses.
+///
+/// `createHandler` has exactly two error shapes and both are JSON with
+/// `Content-Type: application/json`:
+///
+/// ```js
+/// // HandlerBadRequestError, and the 404 in handleGetBundle
+/// new Response(JSON.stringify({ error: error.message }), { status: 400, headers: … })
+/// // anything else
+/// new Response(JSON.stringify({ error: "Internal server error", message: … }), { status: 500, … })
+/// ```
+///
+/// This used to be `(StatusCode::BAD_REQUEST, "some message")`, which axum renders as a
+/// bare `text/plain` body. A client doing `await res.json()` on a failure — which the
+/// hot-updater CLI does — got a JSON parse error instead of the message, so every 400 this
+/// server produced was unreadable to it.
+fn error_response(status: StatusCode, message: impl Into<String>) -> axum::response::Response {
+    (status, Json(serde_json::json!({ "error": message.into() }))).into_response()
 }
 
 const BEARER_PREFIX: &[u8] = b"Bearer ";
@@ -294,7 +425,7 @@ pub async fn list_channels(
     Path(app_name): Path<String>,
 ) -> impl IntoResponse {
     if let Err(err) = authorize(&headers, &state, &app_name) {
-        return err.into_response();
+        return error_response(err.0, err.1);
     }
 
     let rows_result = sqlx::query("SELECT DISTINCT channel FROM bundles WHERE app_name = ?")
@@ -317,7 +448,7 @@ pub async fn list_channels(
         }
         Err(err) => {
             error!("Failed to fetch channels: {}", err);
-            (StatusCode::INTERNAL_SERVER_ERROR, "Database error").into_response()
+            error_response(StatusCode::INTERNAL_SERVER_ERROR, "Database error")
         }
     }
 }
@@ -329,7 +460,7 @@ pub async fn get_bundle(
     Path((app_name, bundle_id)): Path<(String, String)>,
 ) -> impl IntoResponse {
     if let Err(err) = authorize(&headers, &state, &app_name) {
-        return err.into_response();
+        return error_response(err.0, err.1);
     }
 
     let bundle_result =
@@ -347,7 +478,13 @@ pub async fn get_bundle(
             // patch sets. This predicate used to be genuinely redundant; the composite key
             // is exactly what made it load-bearing.
             let patches_result = sqlx::query_as::<_, BundlePatch>(
-                "SELECT * FROM bundle_patches WHERE app_name = ? AND bundle_id = ? ORDER BY order_index ASC",
+                // `base_bundle_id` is the tie-break, not decoration: upstream's `rowToBundle` sorts
+                // with `(left.order_index ?? 0) - (right.order_index ?? 0) || left.base_bundle_id.localeCompare(right.base_bundle_id)`,
+                // and `ORDER BY order_index ASC` alone leaves rows that share an index in an
+                // order MySQL does not promise. patches[0] is what fills the deprecated
+                // `patchBaseBundleId`/`patch*` mirror fields, so an unstable order there is an
+                // unstable response body.
+                "SELECT * FROM bundle_patches WHERE app_name = ? AND bundle_id = ? ORDER BY order_index ASC, base_bundle_id ASC",
             )
             .bind(&app_name)
             .bind(&bundle_id)
@@ -359,15 +496,15 @@ pub async fn get_bundle(
                 Ok(p) => p,
                 Err(err) => {
                     error!("Failed to fetch patches for bundle {}: {}", bundle_id, err);
-                    return (StatusCode::INTERNAL_SERVER_ERROR, "Database error").into_response();
+                    return error_response(StatusCode::INTERNAL_SERVER_ERROR, "Database error");
                 }
             };
             Json(map_to_client_bundle(b, patches)).into_response()
         }
-        Ok(None) => (StatusCode::NOT_FOUND, "Bundle not found").into_response(),
+        Ok(None) => error_response(StatusCode::NOT_FOUND, "Bundle not found"),
         Err(err) => {
             error!("Failed to fetch bundle: {}", err);
-            (StatusCode::INTERNAL_SERVER_ERROR, "Database error").into_response()
+            error_response(StatusCode::INTERNAL_SERVER_ERROR, "Database error")
         }
     }
 }
@@ -944,7 +1081,7 @@ pub async fn list_bundles(
     Query(mut params): Query<ListBundlesParams>,
 ) -> impl IntoResponse {
     if let Err(err) = authorize(&headers, &state, &app_name) {
-        return err.into_response();
+        return error_response(err.0, err.1);
     }
 
     // The two list filters are repeated parameters, which serde_urlencoded cannot express;
@@ -953,31 +1090,31 @@ pub async fn list_bundles(
     params.target_app_version_in = query_get_all(raw_query.as_deref(), "targetAppVersionIn");
 
     if let Err(message) = validate_list_params(&params) {
-        return (StatusCode::BAD_REQUEST, message).into_response();
+        return error_response(StatusCode::BAD_REQUEST, message);
     }
 
     // Upstream rejects an unknown platform here rather than returning an empty list
     // (`handler.mjs:158`).
     if let Err(message) = parse_platform_param(params.platform.as_deref()) {
-        return (StatusCode::BAD_REQUEST, message).into_response();
+        return error_response(StatusCode::BAD_REQUEST, message);
     }
 
     params.enabled = match parse_boolean_param("enabled", params.enabled_raw.as_deref()) {
         Ok(v) => v,
-        Err(message) => return (StatusCode::BAD_REQUEST, message).into_response(),
+        Err(message) => return error_response(StatusCode::BAD_REQUEST, message),
     };
     params.target_app_version_not_null = match parse_boolean_param(
         "targetAppVersionNotNull",
         params.target_app_version_not_null_raw.as_deref(),
     ) {
         Ok(v) => v,
-        Err(message) => return (StatusCode::BAD_REQUEST, message).into_response(),
+        Err(message) => return error_response(StatusCode::BAD_REQUEST, message),
     };
 
     // Upstream removed offset pagination outright and rejects the parameter even when it
     // would have been harmless (`handler.mjs:156`).
     if params.offset.is_some() {
-        return (StatusCode::BAD_REQUEST, OFFSET_REMOVED_MESSAGE).into_response();
+        return error_response(StatusCode::BAD_REQUEST, OFFSET_REMOVED_MESSAGE);
     }
 
     // Upstream validates rather than clamps: `limit=0`, `limit=-1` and `limit=101` are all
@@ -989,11 +1126,11 @@ pub async fn list_bundles(
         MAX_PAGE_SIZE,
     ) {
         Ok(v) => v,
-        Err(message) => return (StatusCode::BAD_REQUEST, message).into_response(),
+        Err(message) => return error_response(StatusCode::BAD_REQUEST, message),
     };
     let page = match parse_page_param(params.page.as_deref()) {
         Ok(v) => v,
-        Err(message) => return (StatusCode::BAD_REQUEST, message).into_response(),
+        Err(message) => return error_response(StatusCode::BAD_REQUEST, message),
     };
 
     // `total` is computed from the base filters with the cursor deliberately excluded
@@ -1013,7 +1150,7 @@ pub async fn list_bundles(
             // Used to be `unwrap_or(0)`, which reported `total: 0` next to a non-empty
             // `data` array and swallowed the error entirely.
             error!("Failed to count bundles: {}", err);
-            return (StatusCode::INTERNAL_SERVER_ERROR, "Database error").into_response();
+            return error_response(StatusCode::INTERNAL_SERVER_ERROR, "Database error");
         }
     };
 
@@ -1087,7 +1224,7 @@ pub async fn list_bundles(
         Ok(b) => b,
         Err(err) => {
             error!("Failed to fetch bundles list: {}", err);
-            return (StatusCode::INTERNAL_SERVER_ERROR, "Database error").into_response();
+            return error_response(StatusCode::INTERNAL_SERVER_ERROR, "Database error");
         }
     };
 
@@ -1128,7 +1265,7 @@ pub async fn list_bundles(
                 Ok(v) => v,
                 Err(err) => {
                     error!("Failed to count bundles before the cursor page: {}", err);
-                    return (StatusCode::INTERNAL_SERVER_ERROR, "Database error").into_response();
+                    return error_response(StatusCode::INTERNAL_SERVER_ERROR, "Database error");
                 }
             }
         }
@@ -1150,7 +1287,8 @@ pub async fn list_bundles(
         for id in &bundle_ids {
             separated.push_bind(id);
         }
-        patches_builder.push(") ORDER BY order_index ASC");
+        // Same tie-break as `get_bundle` -- see the comment there.
+        patches_builder.push(") ORDER BY order_index ASC, base_bundle_id ASC");
 
         let patches_query = patches_builder.build_query_as::<BundlePatch>();
         // A failure here used to fall back to "no patches", which is not a harmless
@@ -1160,7 +1298,7 @@ pub async fn list_bundles(
             Ok(p) => p,
             Err(err) => {
                 error!("Failed to fetch patches for bundle list: {}", err);
-                return (StatusCode::INTERNAL_SERVER_ERROR, "Database error").into_response();
+                return error_response(StatusCode::INTERNAL_SERVER_ERROR, "Database error");
             }
         };
 
@@ -1217,13 +1355,85 @@ fn pagination_json(meta: &PaginationMeta, keys: &CursorKeys) -> serde_json::Valu
 }
 
 // 4. POST /:app/hot-updater/api/bundles
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct CLIPatch {
     pub base_bundle_id: String,
     pub base_file_hash: String,
     pub patch_file_hash: String,
     pub patch_storage_uri: String,
+}
+
+/// Upstream's `readBundlePatchArray` + `getBundlePatches` (`@hot-updater/core`
+/// `dist/index.mjs`), which is what `bundleToPatchRows` feeds off when a bundle is written:
+///
+/// ```js
+/// const isBundlePatchArtifact = (value) =>
+///   !!value && typeof value === "object" && !Array.isArray(value) &&
+///   typeof value.baseBundleId === "string" && typeof value.baseFileHash === "string" &&
+///   typeof value.patchFileHash === "string" && typeof value.patchStorageUri === "string";
+/// const readBundlePatchArray = (patches) =>
+///   Array.isArray(patches) ? patches.filter(isBundlePatchArtifact) : [];
+/// const getBundlePatches = (bundle) => { /* drop repeats of a baseBundleId, keep the first */ };
+/// ```
+///
+/// **Malformed entries are DROPPED, not rejected**, and a `patches` value that is not an
+/// array at all is simply no patches. A strict deserialize here would answer 400 for a
+/// payload upstream publishes happily, so `CLIBundle::patches` is held as a raw
+/// [`serde_json::Value`] and filtered through this function instead.
+///
+/// The de-duplication is not cosmetic: the patch primary key is `"{bundle_id}:{base_bundle_id}"`,
+/// so two patches sharing a base collide on it. Upstream drops the repeat; keeping both would
+/// be a duplicate-key 500.
+///
+/// One deliberate widening of upstream's rule: the "seen" comparison is ASCII-case-insensitive,
+/// because the id columns carry `ascii_general_ci` (see `docs/upstream-parity.md` §3.3) and
+/// MySQL therefore considers `…AAA` and `…aaa` the *same* primary key. Upstream, comparing
+/// case-sensitively, would keep both and hand the database a duplicate key. Revert this to a
+/// plain comparison if those columns ever move to a `_bin` collation.
+pub fn get_bundle_patches(patches: Option<&serde_json::Value>) -> Vec<CLIPatch> {
+    let Some(serde_json::Value::Array(items)) = patches else {
+        return Vec::new();
+    };
+
+    let string_field = |item: &serde_json::Value, key: &str| -> Option<String> {
+        item.get(key).and_then(|v| v.as_str()).map(str::to_string)
+    };
+
+    let mut seen: HashSet<String> = HashSet::new();
+    let mut out = Vec::new();
+
+    for item in items {
+        // Every one of the four fields must be a string, exactly as `isBundlePatchArtifact`
+        // requires. A missing field, a null, or a number drops the whole entry.
+        let (
+            Some(base_bundle_id),
+            Some(base_file_hash),
+            Some(patch_file_hash),
+            Some(patch_storage_uri),
+        ) = (
+            string_field(item, "baseBundleId"),
+            string_field(item, "baseFileHash"),
+            string_field(item, "patchFileHash"),
+            string_field(item, "patchStorageUri"),
+        )
+        else {
+            continue;
+        };
+
+        if !seen.insert(base_bundle_id.to_ascii_lowercase()) {
+            continue;
+        }
+
+        out.push(CLIPatch {
+            base_bundle_id,
+            base_file_hash,
+            patch_file_hash,
+            patch_storage_uri,
+        });
+    }
+
+    out
 }
 
 #[derive(Deserialize, Debug)]
@@ -1246,7 +1456,10 @@ pub struct CLIBundle {
     pub manifest_storage_uri: Option<String>,
     pub manifest_file_hash: Option<String>,
     pub asset_base_storage_uri: Option<String>,
-    pub patches: Option<Vec<CLIPatch>>,
+    /// Held raw and filtered through [`get_bundle_patches`]: upstream drops malformed
+    /// entries and tolerates a non-array value rather than rejecting the request, and a
+    /// `Vec<CLIPatch>` here would answer 400 for payloads upstream accepts.
+    pub patches: Option<serde_json::Value>,
 }
 
 /// Field-level validation for one incoming bundle, run before the transaction opens so
@@ -1267,27 +1480,14 @@ fn validate_cli_bundle(cb: &CLIBundle) -> Result<(), String> {
     check_text_len("assetBaseStorageUri", cb.asset_base_storage_uri.as_ref())?;
     check_target_cohorts_len(cb.target_cohorts.as_ref())?;
 
-    if let Some(patches) = &cb.patches {
-        // The patch primary key is derived as "{bundle_id}:{base_bundle_id}", so two
-        // patches sharing a base collide on it — a duplicate-key 500 rather than a 400.
-        //
-        // The comparison is case-insensitive because the id columns carry the
-        // `ascii_general_ci` collation: MySQL considers "…AAA" and "…aaa" the same primary
-        // key, and they also resolve to the same base bundle. If those columns are ever
-        // moved to a `_bin` collation, this has to become case-sensitive again.
-        let mut seen_bases: HashSet<String> = HashSet::new();
-        for p in patches {
-            validate_id("patches[].baseBundleId", &p.base_bundle_id)?;
-            check_text_len("patches[].baseFileHash", Some(&p.base_file_hash))?;
-            check_text_len("patches[].patchFileHash", Some(&p.patch_file_hash))?;
-            check_text_len("patches[].patchStorageUri", Some(&p.patch_storage_uri))?;
-            if !seen_bases.insert(p.base_bundle_id.to_ascii_lowercase()) {
-                return Err(format!(
-                    "Duplicate patch baseBundleId \"{}\" in the same bundle.",
-                    p.base_bundle_id
-                ));
-            }
-        }
+    // `get_bundle_patches` has already dropped the malformed entries and the repeated bases
+    // the way upstream does, so what is left is only the column-width and id-shape check
+    // that MySQL needs and upstream's schema-less path does not.
+    for p in get_bundle_patches(cb.patches.as_ref()) {
+        validate_id("patches[].baseBundleId", &p.base_bundle_id)?;
+        check_text_len("patches[].baseFileHash", Some(&p.base_file_hash))?;
+        check_text_len("patches[].patchFileHash", Some(&p.patch_file_hash))?;
+        check_text_len("patches[].patchStorageUri", Some(&p.patch_storage_uri))?;
     }
 
     Ok(())
@@ -1323,7 +1523,7 @@ pub async fn create_bundles(
     Json(body): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     if let Err(err) = authorize(&headers, &state, &app_name) {
-        return err.into_response();
+        return error_response(err.0, err.1);
     }
 
     // Parse payload as either a single bundle object or an array of bundles
@@ -1331,31 +1531,30 @@ pub async fn create_bundles(
         match serde_json::from_value(body) {
             Ok(list) => list,
             Err(_) => {
-                return (StatusCode::BAD_REQUEST, "Invalid bundles array payload").into_response()
+                return error_response(StatusCode::BAD_REQUEST, "Invalid bundles array payload")
             }
         }
     } else {
         match serde_json::from_value(body) {
             Ok(single) => vec![single],
             Err(_) => {
-                return (StatusCode::BAD_REQUEST, "Invalid bundle object payload").into_response()
+                return error_response(StatusCode::BAD_REQUEST, "Invalid bundle object payload")
             }
         }
     };
 
     if cli_bundles.len() > MAX_BUNDLES_PER_REQUEST {
-        return (
+        return error_response(
             StatusCode::BAD_REQUEST,
             format!("At most {MAX_BUNDLES_PER_REQUEST} bundles may be sent in one request."),
-        )
-            .into_response();
+        );
     }
 
     // Validate the whole payload up front: no row is written unless every bundle in the
     // request is acceptable.
     for cb in &cli_bundles {
         if let Err(message) = validate_cli_bundle(cb) {
-            return (StatusCode::BAD_REQUEST, message).into_response();
+            return error_response(StatusCode::BAD_REQUEST, message);
         }
         if let Err(message) = assert_bundle_persistence_constraints(
             &cb.target_app_version,
@@ -1363,7 +1562,7 @@ pub async fn create_bundles(
             cb.rollout_cohort_count.unwrap_or(1000),
             &cb.target_cohorts,
         ) {
-            return (StatusCode::BAD_REQUEST, message).into_response();
+            return error_response(StatusCode::BAD_REQUEST, message);
         }
     }
 
@@ -1372,7 +1571,7 @@ pub async fn create_bundles(
         Ok(t) => t,
         Err(err) => {
             error!("Failed to begin transaction: {}", err);
-            return (StatusCode::INTERNAL_SERVER_ERROR, "Database error").into_response();
+            return error_response(StatusCode::INTERNAL_SERVER_ERROR, "Database error");
         }
     };
 
@@ -1449,7 +1648,7 @@ pub async fn create_bundles(
 
         if let Err(err) = insert_bundle_result {
             error!("Failed to upsert bundle {}: {}", cb.id, err);
-            return (StatusCode::INTERNAL_SERVER_ERROR, "Database write error").into_response();
+            return error_response(StatusCode::INTERNAL_SERVER_ERROR, "Database write error");
         }
 
         // Delete previous patches for the bundle. `app_name` is essential: without it this
@@ -1464,11 +1663,12 @@ pub async fn create_bundles(
 
         if let Err(err) = delete_patches_result {
             error!("Failed to clear patches for bundle {}: {}", cb.id, err);
-            return (StatusCode::INTERNAL_SERVER_ERROR, "Database write error").into_response();
+            return error_response(StatusCode::INTERNAL_SERVER_ERROR, "Database write error");
         }
 
         // Insert new patches
-        if let Some(patches) = cb.patches {
+        {
+            let patches = get_bundle_patches(cb.patches.as_ref());
             for (index, p) in patches.into_iter().enumerate() {
                 let patch_id = format!("{}:{}", cb.id, p.base_bundle_id);
                 let order_index = index as i32;
@@ -1493,8 +1693,7 @@ pub async fn create_bundles(
                             "Failed to resolve base bundle {}: {}",
                             p.base_bundle_id, err
                         );
-                        return (StatusCode::INTERNAL_SERVER_ERROR, "Database error")
-                            .into_response();
+                        return error_response(StatusCode::INTERNAL_SERVER_ERROR, "Database error");
                     }
                 }
 
@@ -1521,8 +1720,10 @@ pub async fn create_bundles(
                         "Failed to insert patch {} for bundle {}: {}",
                         patch_id, cb.id, err
                     );
-                    return (StatusCode::INTERNAL_SERVER_ERROR, "Database write error")
-                        .into_response();
+                    return error_response(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "Database write error",
+                    );
                 }
             }
         }
@@ -1530,7 +1731,7 @@ pub async fn create_bundles(
 
     if let Err(err) = tx.commit().await {
         error!("Failed to commit bundle save transaction: {}", err);
-        return (StatusCode::INTERNAL_SERVER_ERROR, "Database commit error").into_response();
+        return error_response(StatusCode::INTERNAL_SERVER_ERROR, "Database commit error");
     }
 
     (
@@ -1541,46 +1742,274 @@ pub async fn create_bundles(
 }
 
 // 5. PATCH /:app/hot-updater/api/bundles/:id
+
+/// Upstream's `requireBundlePatchPayload` (`@hot-updater/server` `dist/handler.mjs`), which
+/// is the entire HTTP-layer contract for a PATCH body:
+///
+/// ```js
+/// const requireBundlePatchPayload = (payload, bundleId) => {
+///   if (!payload || typeof payload !== "object" || Array.isArray(payload))
+///     throw new HandlerBadRequestError("Invalid bundle payload");
+///   const bundlePatch = payload;
+///   if (bundlePatch.id !== void 0 && bundlePatch.id !== bundleId)
+///     throw new HandlerBadRequestError("Bundle id mismatch");
+///   const { id: _ignoredId, ...rest } = bundlePatch;
+///   return rest;
+/// };
+/// ```
+///
+/// reached from `handleUpdateBundle` as `requireBundlePatchPayload(Array.isArray(body) ? body[0] : body, bundleId)`.
+///
+/// Three details are easy to get wrong and each has a recorded fixture case:
+///
+/// * An **array body collapses to its first element**. `PATCH [{"enabled":false}]` is a
+///   valid patch, not a malformed one; an empty array yields `undefined` and is the
+///   *"Invalid bundle payload"* branch.
+/// * The id guard is `!== void 0`, so an explicit **`"id": null` counts as present** and is
+///   therefore a mismatch. Only an absent `id`, or one equal to the route id, gets through.
+/// * A matching `id` is **stripped**, so `id` never reaches the update itself.
+pub fn require_bundle_patch_payload(
+    body: serde_json::Value,
+    bundle_id: &str,
+) -> Result<serde_json::Value, &'static str> {
+    let candidate = match body {
+        serde_json::Value::Array(mut items) => {
+            if items.is_empty() {
+                serde_json::Value::Null
+            } else {
+                items.swap_remove(0)
+            }
+        }
+        other => other,
+    };
+
+    let serde_json::Value::Object(mut map) = candidate else {
+        return Err("Invalid bundle payload");
+    };
+
+    // `!== void 0`: a present-but-null id is a mismatch, not an absent one.
+    if let Some(id) = map.get("id") {
+        if id != &serde_json::Value::String(bundle_id.to_string()) {
+            return Err("Bundle id mismatch");
+        }
+    }
+    map.remove("id");
+
+    Ok(serde_json::Value::Object(map))
+}
+
+/// Distinguish "the key was absent" from "the key was present and null".
+///
+/// A plain `Option<T>` collapses the two — serde folds a JSON `null` to `None`, which reads as
+/// "leave unchanged". Upstream does not: `mergeBundleUpdate` skips only `undefined`, so a
+/// present `null` is assigned and **clears the column**. Without this wrapper there is no way
+/// to clear a nullable field through the API at all: the operator sends
+/// `{"message": null}`, gets `200 {"success":true}`, and the row is unchanged.
+///
+/// `Option<Option<T>>`: outer `None` = absent, `Some(None)` = explicit null, `Some(Some(v))` =
+/// a value. Every field needs `#[serde(default)]` as well, or an absent key is an error
+/// instead of `None`.
+fn double_option<'de, T, D>(deserializer: D) -> Result<Option<Option<T>>, D::Error>
+where
+    T: Deserialize<'de>,
+    D: serde::Deserializer<'de>,
+{
+    Option::deserialize(deserializer).map(Some)
+}
+
+/// The columns upstream's `v0_31_0` schema declares nullable, and therefore the only ones an
+/// explicit `null` may clear. `channel`, `metadata` and `rollout_cohort_count` are NOT NULL
+/// *with defaults* — the first two of those are handled separately below — and the rest are
+/// required outright. `migrations/20260714000000_init.sql` matches this exactly.
+const NOT_NULL_PATCH_COLUMNS: &[&str] = &[
+    "platform",
+    "shouldForceUpdate",
+    "enabled",
+    "fileHash",
+    "channel",
+    "storageUri",
+];
+
+/// Upstream's `mergeBundleUpdate` (`@hot-updater/plugin-core` `dist/createDatabasePlugin.mjs`)
+/// is an es-toolkit `mergeWith` whose customizer only intercepts `REPLACE_ON_UPDATE_KEYS`:
+///
+/// ```js
+/// const REPLACE_ON_UPDATE_KEYS = ["patches", "targetCohorts"];
+/// function mergeBundleUpdate(baseBundle, patch) {
+///   return mergeWith({ ...baseBundle }, patch, (_t, sourceValue, key) => {
+///     if (REPLACE_ON_UPDATE_KEYS.includes(key)) return sourceValue;
+///   });
+/// }
+/// ```
+///
+/// So `patches` and `targetCohorts` are **replaced whole**, and everything else — in practice
+/// `metadata`, the only other structured column — is **deep merged**. This function is that
+/// deep merge, and every rule below is a recorded case in `tests/fixtures/cli_api_fixtures.json`:
+///
+/// | stored | patch | result | case |
+/// | --- | --- | --- | --- |
+/// | `{"b":2,"nested":{"x":1}}` | `{"a":1}` | `{"b":2,"nested":{"x":1},"a":1}` | *metadata is DEEP merged, not replaced* |
+/// | `{"nested":{"x":1}}` | `{"nested":{"y":2}}` | `{"nested":{"x":1,"y":2}}` | *merged key by key* |
+/// | `{"b":2}` | `{}` | `{"b":2}` | *an empty object leaves the stored keys in place* |
+/// | `{"a":{"deep":1}}` | `{"a":"flat"}` | `{"a":"flat"}` | *overwrites an object with a scalar* |
+/// | `{"a":[1,2,3]}` | `{"a":[9]}` | **`{"a":[9,2,3]}`** | *array is merged index by index* |
+/// | `{"a":1}` | `{"a":null}` | `{"a":null}` | *value set to null explicitly* |
+///
+/// **The array row is not a typo and this is not a bug to fix.** es-toolkit walks arrays
+/// index by index like any other object, so a shorter patch array leaves the tail of the
+/// stored one behind, and a metadata key can never be *removed* — only overwritten. Anyone
+/// "correcting" this into a replace breaks parity; the recorded cases are the proof, and
+/// `tests/cli_api_parity_tests.rs` replays them.
+pub fn merge_bundle_metadata(
+    current: Option<&serde_json::Value>,
+    patch: &serde_json::Value,
+) -> serde_json::Value {
+    let Some(current) = current else {
+        return patch.clone();
+    };
+
+    match (current, patch) {
+        (serde_json::Value::Object(base), serde_json::Value::Object(source)) => {
+            let mut merged = base.clone();
+            for (key, value) in source {
+                let next = match merged.get(key) {
+                    Some(existing) => merge_bundle_metadata(Some(existing), value),
+                    None => value.clone(),
+                };
+                merged.insert(key.clone(), next);
+            }
+            serde_json::Value::Object(merged)
+        }
+        // Index-by-index, keeping the stored tail. See the table above.
+        (serde_json::Value::Array(base), serde_json::Value::Array(source)) => {
+            let mut merged = base.clone();
+            for (index, value) in source.iter().enumerate() {
+                let next = match merged.get(index) {
+                    Some(existing) => merge_bundle_metadata(Some(existing), value),
+                    None => value.clone(),
+                };
+                if index < merged.len() {
+                    merged[index] = next;
+                } else {
+                    merged.push(next);
+                }
+            }
+            serde_json::Value::Array(merged)
+        }
+        // Mismatched kinds, or a leaf: the patch wins outright, `null` included.
+        _ => patch.clone(),
+    }
+}
+
 #[derive(Deserialize, Debug, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateBundlePayload {
-    pub id: Option<String>,
-    pub platform: Option<String>,
-    pub should_force_update: Option<bool>,
-    pub enabled: Option<bool>,
-    pub file_hash: Option<String>,
-    pub git_commit_hash: Option<String>,
-    pub message: Option<String>,
-    pub channel: Option<String>,
-    pub storage_uri: Option<String>,
-    pub target_app_version: Option<String>,
-    pub fingerprint_hash: Option<String>,
-    pub metadata: Option<serde_json::Value>,
-    pub rollout_cohort_count: Option<i32>,
-    pub target_cohorts: Option<Vec<String>>,
-    pub manifest_storage_uri: Option<String>,
-    pub manifest_file_hash: Option<String>,
-    pub asset_base_storage_uri: Option<String>,
+    // Every field is a double option so that an explicit `null` — which upstream assigns and
+    // which therefore CLEARS the column — is distinguishable from an absent key.
+    #[serde(default, deserialize_with = "double_option")]
+    pub platform: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
+    pub should_force_update: Option<Option<bool>>,
+    #[serde(default, deserialize_with = "double_option")]
+    pub enabled: Option<Option<bool>>,
+    #[serde(default, deserialize_with = "double_option")]
+    pub file_hash: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
+    pub git_commit_hash: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
+    pub message: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
+    pub channel: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
+    pub storage_uri: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
+    pub target_app_version: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
+    pub fingerprint_hash: Option<Option<String>>,
+    /// Deep merged into the stored value, never replaced — see [`merge_bundle_metadata`].
+    /// An explicit `null` resets the column to `{}` rather than to SQL NULL: `bundleToRow`
+    /// writes `stripBundleArtifactMetadata(bundle.metadata) ?? {}` and the column is NOT NULL.
+    #[serde(default, deserialize_with = "double_option")]
+    pub metadata: Option<Option<serde_json::Value>>,
+    /// An explicit `null` resets this to the default 1000, not to SQL NULL: `bundleToRow`
+    /// writes `bundle.rolloutCohortCount ?? DEFAULT_ROLLOUT_COHORT_COUNT`.
+    #[serde(default, deserialize_with = "double_option")]
+    pub rollout_cohort_count: Option<Option<i32>>,
+    /// **REPLACED, never merged** — `targetCohorts` is in upstream's `REPLACE_ON_UPDATE_KEYS`
+    /// alongside `patches`. Do not "helpfully" merge this with the stored list.
+    #[serde(default, deserialize_with = "double_option")]
+    pub target_cohorts: Option<Option<Vec<String>>>,
+    #[serde(default, deserialize_with = "double_option")]
+    pub manifest_storage_uri: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
+    pub manifest_file_hash: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
+    pub asset_base_storage_uri: Option<Option<String>>,
+    /// **REPLACED, never merged**, for the same reason as `target_cohorts`: both sit in
+    /// upstream's `REPLACE_ON_UPDATE_KEYS`. Present-and-empty (or null) CLEARS the patch set;
+    /// absent leaves it alone. Held raw and filtered through [`get_bundle_patches`], like
+    /// `CLIBundle::patches`.
+    #[serde(default, deserialize_with = "double_option")]
+    pub patches: Option<Option<serde_json::Value>>,
 }
 
-/// Same column-width checks as `validate_cli_bundle`: PATCH writes to exactly the same
-/// `TEXT` columns, so it needs the same guard against truncation/500s.
+/// Same column-width checks as `validate_cli_bundle` — PATCH writes to exactly the same
+/// `TEXT` columns — plus the guard against nulling a NOT NULL column.
+///
+/// **Upstream has no equivalent of that second guard.** `bundleToRow` passes `platform`,
+/// `shouldForceUpdate`, `enabled`, `fileHash`, `channel` and `storageUri` through verbatim, so
+/// `PATCH {"channel": null}` hands the adapter a `NULL` for a `NOT NULL` column and the
+/// *database* rejects it. The recorded cases show exactly that null reaching the row
+/// (`tests/fixtures/cli_api_fixtures.json`, "channel set to null (a NOT NULL column with a
+/// default)" and its four siblings) — but the fixture's in-memory store enforces no
+/// constraints, so upstream's HTTP answer is genuinely **unobservable** at that boundary. Both
+/// ends agree the request fails; answering 400 with the offending field named, rather than
+/// letting MySQL 1048 surface as an opaque 500, is the same choice already recorded in
+/// `docs/upstream-parity.md` §3.6.
 fn validate_update_payload(payload: &UpdateBundlePayload) -> Result<(), String> {
-    check_text_len("platform", payload.platform.as_ref())?;
-    check_text_len("fileHash", payload.file_hash.as_ref())?;
-    check_text_len("storageUri", payload.storage_uri.as_ref())?;
-    check_text_len("gitCommitHash", payload.git_commit_hash.as_ref())?;
-    check_text_len("message", payload.message.as_ref())?;
-    check_text_len("channel", payload.channel.as_ref())?;
-    check_text_len("targetAppVersion", payload.target_app_version.as_ref())?;
-    check_text_len("fingerprintHash", payload.fingerprint_hash.as_ref())?;
-    check_text_len("manifestStorageUri", payload.manifest_storage_uri.as_ref())?;
-    check_text_len("manifestFileHash", payload.manifest_file_hash.as_ref())?;
+    // `Option<Option<T>>` -> the inner value, if one was supplied.
+    fn value<T>(field: &Option<Option<T>>) -> Option<&T> {
+        field.as_ref().and_then(Option::as_ref)
+    }
+    /// Was the key present AND null?
+    fn is_explicit_null<T>(field: &Option<Option<T>>) -> bool {
+        matches!(field, Some(None))
+    }
+
+    check_text_len("platform", value(&payload.platform))?;
+    check_text_len("fileHash", value(&payload.file_hash))?;
+    check_text_len("storageUri", value(&payload.storage_uri))?;
+    check_text_len("gitCommitHash", value(&payload.git_commit_hash))?;
+    check_text_len("message", value(&payload.message))?;
+    check_text_len("channel", value(&payload.channel))?;
+    check_text_len("targetAppVersion", value(&payload.target_app_version))?;
+    check_text_len("fingerprintHash", value(&payload.fingerprint_hash))?;
+    check_text_len("manifestStorageUri", value(&payload.manifest_storage_uri))?;
+    check_text_len("manifestFileHash", value(&payload.manifest_file_hash))?;
     check_text_len(
         "assetBaseStorageUri",
-        payload.asset_base_storage_uri.as_ref(),
+        value(&payload.asset_base_storage_uri),
     )?;
-    check_target_cohorts_len(payload.target_cohorts.as_ref())?;
+    check_target_cohorts_len(value(&payload.target_cohorts))?;
+
+    let explicit_nulls = [
+        ("platform", is_explicit_null(&payload.platform)),
+        (
+            "shouldForceUpdate",
+            is_explicit_null(&payload.should_force_update),
+        ),
+        ("enabled", is_explicit_null(&payload.enabled)),
+        ("fileHash", is_explicit_null(&payload.file_hash)),
+        ("channel", is_explicit_null(&payload.channel)),
+        ("storageUri", is_explicit_null(&payload.storage_uri)),
+    ];
+    for (field, is_null) in explicit_nulls {
+        debug_assert!(NOT_NULL_PATCH_COLUMNS.contains(&field));
+        if is_null {
+            return Err(format!("{field} must not be null."));
+        }
+    }
+
     Ok(())
 }
 
@@ -1588,20 +2017,29 @@ pub async fn update_bundle(
     headers: HeaderMap,
     State(state): State<AppState>,
     Path((app_name, bundle_id)): Path<(String, String)>,
-    Json(payload): Json<UpdateBundlePayload>,
+    Json(body): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     if let Err(err) = authorize(&headers, &state, &app_name) {
-        return err.into_response();
+        return error_response(err.0, err.1);
     }
 
-    if let Some(ref id) = payload.id {
-        if id != &bundle_id {
-            return (StatusCode::BAD_REQUEST, "Bundle id mismatch").into_response();
-        }
-    }
+    // The body arrives as a raw `Value` rather than a typed extractor so that
+    // `require_bundle_patch_payload` can reproduce upstream's contract exactly — an array
+    // body collapsing to its first element, and a 400 with upstream's own message text for
+    // the two rejection branches. A `Json<UpdateBundlePayload>` extractor answered axum's
+    // generic 422 for both.
+    let payload_value = match require_bundle_patch_payload(body, &bundle_id) {
+        Ok(value) => value,
+        Err(message) => return error_response(StatusCode::BAD_REQUEST, message),
+    };
+
+    let payload: UpdateBundlePayload = match serde_json::from_value(payload_value) {
+        Ok(p) => p,
+        Err(_) => return error_response(StatusCode::BAD_REQUEST, "Invalid bundle payload"),
+    };
 
     if let Err(message) = validate_update_payload(&payload) {
-        return (StatusCode::BAD_REQUEST, message).into_response();
+        return error_response(StatusCode::BAD_REQUEST, message);
     }
 
     let current =
@@ -1612,30 +2050,48 @@ pub async fn update_bundle(
             .await
         {
             Ok(Some(b)) => b,
-            Ok(None) => return (StatusCode::NOT_FOUND, "Bundle not found").into_response(),
+            Ok(None) => return error_response(StatusCode::NOT_FOUND, "Bundle not found"),
             Err(err) => {
                 error!("Failed to fetch bundle {} for update: {}", bundle_id, err);
-                return (StatusCode::INTERNAL_SERVER_ERROR, "Database error").into_response();
+                return error_response(StatusCode::INTERNAL_SERVER_ERROR, "Database error");
             }
         };
 
+    // `metadata` is DEEP merged against the stored value, never replaced -- upstream's
+    // `mergeBundleUpdate` is an es-toolkit `mergeWith` and `metadata` is not one of its two
+    // `REPLACE_ON_UPDATE_KEYS`. Resolved here, where the current row is in hand, so that
+    // `build_update_query` stays a pure function of its payload. An explicit null resets the
+    // column to `{}` (`bundleToRow`'s `?? {}`), which is why it is not merged at all.
+    let mut payload = payload;
+    if let Some(Some(patch_metadata)) = &payload.metadata {
+        let current_metadata = parse_bundle_metadata(current.metadata.as_ref());
+        payload.metadata = Some(Some(merge_bundle_metadata(
+            current_metadata.as_ref(),
+            patch_metadata,
+        )));
+    }
+    let payload = payload;
+
     // Validate constraints against the merged row that results after the patch is applied
     // (reference: HotUpdaterApi.updateBundleById -> assertBundlePersistenceConstraints({ ...current, ...newBundle })).
-    // NOTE: an omitted field cannot be distinguished from an explicitly `null` field with a
-    // single Option; both are treated as "leave unchanged" (the current value is kept).
-    let merged_target_app_version = payload
-        .target_app_version
-        .clone()
-        .or_else(|| current.target_app_version.clone());
-    let merged_fingerprint_hash = payload
-        .fingerprint_hash
-        .clone()
-        .or_else(|| current.fingerprint_hash.clone());
-    let merged_rollout_cohort_count = payload
-        .rollout_cohort_count
-        .unwrap_or(current.rollout_cohort_count);
+    // With the double option an explicit null is now distinguishable from an absent key, so
+    // the merge below is the real post-patch row: `Some(None)` clears, `None` keeps.
+    let merged = |patch: &Option<Option<String>>, stored: &Option<String>| -> Option<String> {
+        match patch {
+            Some(value) => value.clone(),
+            None => stored.clone(),
+        }
+    };
+    let merged_target_app_version =
+        merged(&payload.target_app_version, &current.target_app_version);
+    let merged_fingerprint_hash = merged(&payload.fingerprint_hash, &current.fingerprint_hash);
+    let merged_rollout_cohort_count = match payload.rollout_cohort_count {
+        // An explicit null is a reset to the default, not a clear.
+        Some(value) => value.unwrap_or(cohort::DEFAULT_ROLLOUT_COHORT_COUNT),
+        None => current.rollout_cohort_count,
+    };
     let merged_target_cohorts = match &payload.target_cohorts {
-        Some(tc) => Some(tc.clone()),
+        Some(value) => value.clone(),
         None => parse_target_cohorts(&current.target_cohorts),
     };
 
@@ -1645,25 +2101,120 @@ pub async fn update_bundle(
         merged_rollout_cohort_count,
         &merged_target_cohorts,
     ) {
-        return (StatusCode::BAD_REQUEST, message).into_response();
+        return error_response(StatusCode::BAD_REQUEST, message);
     }
 
-    let mut qb = match build_update_query(payload, app_name, bundle_id.clone()) {
-        Some(qb) => qb,
-        // Nothing to SET. `UPDATE bundles SET WHERE ...` is not valid SQL, so an empty
-        // patch must not reach the database; report success without touching the row.
-        None => return Json(serde_json::json!({ "success": true })).into_response(),
-    };
+    // `patches` is the other `REPLACE_ON_UPDATE_KEYS` member: present means REPLACE the whole
+    // set (empty or null clears it), absent means leave it alone. It writes rows rather than a
+    // column, so it cannot ride along in the UPDATE and the two have to share a transaction --
+    // otherwise a failed patch insert would leave the column update committed.
+    let replacement_patches = payload
+        .patches
+        .as_ref()
+        .map(|value| get_bundle_patches(value.as_ref()));
 
-    let result = qb.build().execute(&state.db).await;
-
-    match result {
-        Ok(_) => Json(serde_json::json!({ "success": true })).into_response(),
-        Err(err) => {
-            error!("Failed to update bundle {}: {}", bundle_id, err);
-            (StatusCode::INTERNAL_SERVER_ERROR, "Database error").into_response()
+    if let Some(patches) = &replacement_patches {
+        for p in patches {
+            if let Err(message) = validate_id("patches[].baseBundleId", &p.base_bundle_id)
+                .and_then(|()| check_text_len("patches[].baseFileHash", Some(&p.base_file_hash)))
+                .and_then(|()| check_text_len("patches[].patchFileHash", Some(&p.patch_file_hash)))
+                .and_then(|()| {
+                    check_text_len("patches[].patchStorageUri", Some(&p.patch_storage_uri))
+                })
+            {
+                return error_response(StatusCode::BAD_REQUEST, message);
+            }
         }
     }
+
+    let column_update = build_update_query(payload, app_name.clone(), bundle_id.clone());
+
+    // Nothing to SET and no patch list supplied. `UPDATE bundles SET WHERE ...` is not valid
+    // SQL, so an empty patch must not reach the database; report success without touching
+    // the row.
+    if column_update.is_none() && replacement_patches.is_none() {
+        return Json(serde_json::json!({ "success": true })).into_response();
+    }
+
+    let mut tx = match state.db.begin().await {
+        Ok(t) => t,
+        Err(err) => {
+            error!("Failed to begin update transaction: {}", err);
+            return error_response(StatusCode::INTERNAL_SERVER_ERROR, "Database error");
+        }
+    };
+
+    if let Some(mut qb) = column_update {
+        if let Err(err) = qb.build().execute(&mut *tx).await {
+            error!("Failed to update bundle {}: {}", bundle_id, err);
+            return error_response(StatusCode::INTERNAL_SERVER_ERROR, "Database error");
+        }
+    }
+
+    if let Some(patches) = replacement_patches {
+        // Same delete-then-insert shape as `create_bundles`, and `app_name` is just as
+        // essential here: without it this would delete the patch rows of every app that
+        // happens to use the same bundle id.
+        if let Err(err) =
+            sqlx::query("DELETE FROM bundle_patches WHERE app_name = ? AND bundle_id = ?")
+                .bind(&app_name)
+                .bind(&bundle_id)
+                .execute(&mut *tx)
+                .await
+        {
+            error!("Failed to clear patches for bundle {}: {}", bundle_id, err);
+            return error_response(StatusCode::INTERNAL_SERVER_ERROR, "Database write error");
+        }
+
+        for (index, p) in patches.into_iter().enumerate() {
+            match app_owns_bundle(&mut tx, &app_name, &p.base_bundle_id).await {
+                Ok(true) => {}
+                Ok(false) => {
+                    return error_response(
+                        StatusCode::BAD_REQUEST,
+                        "Patch baseBundleId does not refer to a bundle of this application",
+                    );
+                }
+                Err(err) => {
+                    error!(
+                        "Failed to resolve base bundle {}: {}",
+                        p.base_bundle_id, err
+                    );
+                    return error_response(StatusCode::INTERNAL_SERVER_ERROR, "Database error");
+                }
+            }
+
+            let insert_patch_result = sqlx::query(
+                r#"
+                INSERT INTO bundle_patches (
+                    id, app_name, bundle_id, base_bundle_id, base_file_hash, patch_file_hash, patch_storage_uri, order_index
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                "#,
+            )
+            .bind(format!("{}:{}", bundle_id, p.base_bundle_id))
+            .bind(&app_name)
+            .bind(&bundle_id)
+            .bind(&p.base_bundle_id)
+            .bind(&p.base_file_hash)
+            .bind(&p.patch_file_hash)
+            .bind(&p.patch_storage_uri)
+            .bind(index as i32)
+            .execute(&mut *tx)
+            .await;
+
+            if let Err(err) = insert_patch_result {
+                error!("Failed to insert patch for bundle {}: {}", bundle_id, err);
+                return error_response(StatusCode::INTERNAL_SERVER_ERROR, "Database write error");
+            }
+        }
+    }
+
+    if let Err(err) = tx.commit().await {
+        error!("Failed to commit bundle update transaction: {}", err);
+        return error_response(StatusCode::INTERNAL_SERVER_ERROR, "Database commit error");
+    }
+
+    Json(serde_json::json!({ "success": true })).into_response()
 }
 
 /// Build the `UPDATE bundles SET ... WHERE app_name = ? AND id = ?` statement for the
@@ -1692,44 +2243,42 @@ fn build_update_query(
         }};
     }
 
-    if let Some(v) = payload.platform {
+    // The six NOT NULL columns. `validate_update_payload` has already rejected an explicit
+    // null for each, so `Some(None)` cannot reach here; unwrapping the inner option is safe
+    // and keeps the bind types non-nullable.
+    if let Some(Some(v)) = payload.platform {
         set_field!("platform", v);
     }
-    if let Some(v) = payload.should_force_update {
+    if let Some(Some(v)) = payload.should_force_update {
         set_field!("should_force_update", if v { 1i8 } else { 0i8 });
     }
-    if let Some(v) = payload.enabled {
+    if let Some(Some(v)) = payload.enabled {
         set_field!("enabled", if v { 1i8 } else { 0i8 });
     }
-    if let Some(v) = payload.file_hash {
+    if let Some(Some(v)) = payload.file_hash {
         set_field!("file_hash", v);
     }
+    if let Some(Some(v)) = payload.channel {
+        set_field!("channel", v);
+    }
+    if let Some(Some(v)) = payload.storage_uri {
+        set_field!("storage_uri", v);
+    }
+
+    // The nullable columns. `Some(None)` binds SQL NULL and CLEARS the column — that is the
+    // whole point of the double option, and the only way to undo a `message` or a
+    // `fingerprintHash` through this API.
     if let Some(v) = payload.git_commit_hash {
         set_field!("git_commit_hash", v);
     }
     if let Some(v) = payload.message {
         set_field!("message", v);
     }
-    if let Some(v) = payload.channel {
-        set_field!("channel", v);
-    }
-    if let Some(v) = payload.storage_uri {
-        set_field!("storage_uri", v);
-    }
     if let Some(v) = payload.target_app_version {
         set_field!("target_app_version", v);
     }
     if let Some(v) = payload.fingerprint_hash {
         set_field!("fingerprint_hash", v);
-    }
-    if let Some(v) = payload.metadata {
-        set_field!("metadata", v);
-    }
-    if let Some(v) = payload.rollout_cohort_count {
-        set_field!("rollout_cohort_count", v);
-    }
-    if let Some(v) = payload.target_cohorts {
-        set_field!("target_cohorts", cohorts_to_json(&v));
     }
     if let Some(v) = payload.manifest_storage_uri {
         set_field!("manifest_storage_uri", v);
@@ -1739,6 +2288,30 @@ fn build_update_query(
     }
     if let Some(v) = payload.asset_base_storage_uri {
         set_field!("asset_base_storage_uri", v);
+    }
+    // Nullable, and REPLACED rather than merged — `targetCohorts` is one of upstream's two
+    // `REPLACE_ON_UPDATE_KEYS`. Contrast `metadata` directly below, which arrives here already
+    // deep merged by `update_bundle`.
+    if let Some(v) = payload.target_cohorts {
+        set_field!(
+            "target_cohorts",
+            v.as_deref()
+                .map(cohorts_to_json)
+                .unwrap_or(serde_json::Value::Null)
+        );
+    }
+
+    // NOT NULL with a default, and an explicit null means "reset to that default" rather than
+    // "clear": `bundleToRow` writes `?? DEFAULT_ROLLOUT_COHORT_COUNT` and `?? {}` respectively.
+    // `metadata` has already been merged against the stored value by `update_bundle`.
+    if let Some(v) = payload.rollout_cohort_count {
+        set_field!(
+            "rollout_cohort_count",
+            v.unwrap_or(cohort::DEFAULT_ROLLOUT_COHORT_COUNT)
+        );
+    }
+    if let Some(v) = payload.metadata {
+        set_field!("metadata", v.unwrap_or_else(|| serde_json::json!({})));
     }
 
     if !has_update {
@@ -1764,7 +2337,7 @@ pub async fn delete_bundle(
     Path((app_name, bundle_id)): Path<(String, String)>,
 ) -> impl IntoResponse {
     if let Err(err) = authorize(&headers, &state, &app_name) {
-        return err.into_response();
+        return error_response(err.0, err.1);
     }
 
     // Since DB has ON DELETE CASCADE on foreign keys, deleting from bundles automatically deletes patches!
@@ -1778,7 +2351,7 @@ pub async fn delete_bundle(
         Ok(_) => Json(serde_json::json!({ "success": true })).into_response(),
         Err(err) => {
             error!("Failed to delete bundle {}: {}", bundle_id, err);
-            (StatusCode::INTERNAL_SERVER_ERROR, "Database error").into_response()
+            error_response(StatusCode::INTERNAL_SERVER_ERROR, "Database error")
         }
     }
 }
@@ -1903,13 +2476,20 @@ mod tests {
         }
     }
 
-    fn sample_patch(base: &str) -> CLIPatch {
-        CLIPatch {
-            base_bundle_id: base.to_string(),
-            base_file_hash: "base-hash".to_string(),
-            patch_file_hash: "patch-hash".to_string(),
-            patch_storage_uri: "s3://bucket/patch".to_string(),
-        }
+    fn sample_patch(base: &str) -> serde_json::Value {
+        serde_json::json!({
+            "baseBundleId": base,
+            "baseFileHash": "base-hash",
+            "patchFileHash": "patch-hash",
+            "patchStorageUri": "s3://bucket/patch",
+        })
+    }
+
+    fn patch_bases(cb: &CLIBundle) -> Vec<String> {
+        get_bundle_patches(cb.patches.as_ref())
+            .into_iter()
+            .map(|p| p.base_bundle_id)
+            .collect()
     }
 
     #[test]
@@ -1931,36 +2511,144 @@ mod tests {
         assert!(validate_cli_bundle(&cb).is_err());
     }
 
+    /// A repeated `baseBundleId` is DROPPED, not rejected.
+    ///
+    /// This used to answer 400 `Duplicate patch baseBundleId "…"`. Upstream's
+    /// `getBundlePatches` keeps the first occurrence and silently discards the rest, and a
+    /// payload upstream publishes must not fail here — the reason the check existed (two
+    /// patches colliding on the derived primary key `"{bundle_id}:{base_bundle_id}"`) is
+    /// satisfied just as well by dropping the repeat, and without the 400.
     #[test]
-    fn validate_cli_bundle_rejects_duplicate_patch_bases() {
+    fn duplicate_patch_bases_are_dropped_not_rejected() {
         let mut cb = sample_bundle();
-        cb.patches = Some(vec![
+        cb.patches = Some(serde_json::json!([
             sample_patch("0198f0c1-0000-7c3d-8e4f-5a6b7c8d9e0f"),
             sample_patch("0198f0c1-0000-7c3d-8e4f-5a6b7c8d9e0f"),
-        ]);
-        // Same derived primary key "{bundle_id}:{base_bundle_id}" twice.
-        assert!(validate_cli_bundle(&cb).is_err());
+        ]));
+        assert!(validate_cli_bundle(&cb).is_ok());
+        assert_eq!(
+            patch_bases(&cb),
+            vec!["0198f0c1-0000-7c3d-8e4f-5a6b7c8d9e0f".to_string()],
+            "the repeated base must collapse to one patch row, not two"
+        );
 
-        cb.patches = Some(vec![
+        cb.patches = Some(serde_json::json!([
             sample_patch("0198f0c1-0000-7c3d-8e4f-5a6b7c8d9e0f"),
             sample_patch("0198f0c1-1111-7c3d-8e4f-5a6b7c8d9e0f"),
-        ]);
+        ]));
         assert!(validate_cli_bundle(&cb).is_ok());
+        assert_eq!(patch_bases(&cb).len(), 2);
 
-        // Under the `ascii_general_ci` collation on the id columns these two are the same
-        // primary key, so they must be caught here rather than as a duplicate-key 500.
-        cb.patches = Some(vec![
+        // Under the `ascii_general_ci` collation on the id columns these two ARE the same
+        // primary key, so the repeat has to collapse here as well or MySQL answers 1062.
+        // Upstream, comparing case-sensitively, would keep both — see `get_bundle_patches`.
+        cb.patches = Some(serde_json::json!([
             sample_patch("0198f0c1-000a-7c3d-8e4f-5a6b7c8d9e0f"),
             sample_patch("0198f0c1-000A-7c3d-8e4f-5a6b7c8d9e0f"),
-        ]);
+        ]));
+        assert!(validate_cli_bundle(&cb).is_ok());
+        assert_eq!(
+            patch_bases(&cb),
+            vec!["0198f0c1-000a-7c3d-8e4f-5a6b7c8d9e0f".to_string()],
+        );
+    }
+
+    /// A patch entry that is not four strings is DROPPED, matching upstream's
+    /// `isBundlePatchArtifact` filter — the whole request must not fail over it.
+    #[test]
+    fn malformed_patch_entries_are_dropped_not_rejected() {
+        let mut cb = sample_bundle();
+        cb.patches = Some(serde_json::json!([
+            { "baseBundleId": "0198f0c1-0000-7c3d-8e4f-5a6b7c8d9e0f", "baseFileHash": "h", "patchFileHash": "p" },
+            { "baseBundleId": "0198f0c1-1111-7c3d-8e4f-5a6b7c8d9e0f", "baseFileHash": null, "patchFileHash": "p", "patchStorageUri": "s3://b/p" },
+            sample_patch("0198f0c1-2222-7c3d-8e4f-5a6b7c8d9e0f"),
+        ]));
+        assert!(validate_cli_bundle(&cb).is_ok());
+        assert_eq!(
+            patch_bases(&cb),
+            vec!["0198f0c1-2222-7c3d-8e4f-5a6b7c8d9e0f".to_string()],
+            "only the well-formed entry survives"
+        );
+
+        // A non-array `patches` is no patches at all, not a rejected request.
+        cb.patches = Some(serde_json::json!({ "baseBundleId": "x" }));
+        assert!(validate_cli_bundle(&cb).is_ok());
+        assert!(patch_bases(&cb).is_empty());
+
+        cb.patches = Some(serde_json::Value::Null);
+        assert!(validate_cli_bundle(&cb).is_ok());
+        assert!(patch_bases(&cb).is_empty());
+    }
+
+    /// A surviving patch still has to fit the `CHAR(36)` column, which upstream's
+    /// schema-less path never has to care about.
+    #[test]
+    fn validate_cli_bundle_rejects_a_bad_patch_base_id() {
+        let mut cb = sample_bundle();
+        cb.patches = Some(serde_json::json!([sample_patch("not a uuid")]));
         assert!(validate_cli_bundle(&cb).is_err());
     }
 
     #[test]
-    fn validate_cli_bundle_rejects_a_bad_patch_base_id() {
-        let mut cb = sample_bundle();
-        cb.patches = Some(vec![sample_patch("not a uuid")]);
-        assert!(validate_cli_bundle(&cb).is_err());
+    fn parse_bundle_metadata_matches_upstream() {
+        use serde_json::json;
+        // A real object survives, in both storage forms.
+        assert_eq!(
+            parse_bundle_metadata(Some(&json!({ "a": 1 }))),
+            Some(json!({ "a": 1 }))
+        );
+        assert_eq!(
+            parse_bundle_metadata(Some(&json!("{\"a\":1}"))),
+            Some(json!({ "a": 1 }))
+        );
+        assert_eq!(parse_bundle_metadata(Some(&json!({}))), Some(json!({})));
+        // Everything else is ABSENT -- not null, not {}.
+        assert_eq!(parse_bundle_metadata(None), None);
+        assert_eq!(parse_bundle_metadata(Some(&json!(null))), None);
+        assert_eq!(parse_bundle_metadata(Some(&json!(""))), None);
+        assert_eq!(parse_bundle_metadata(Some(&json!("not json"))), None);
+        assert_eq!(parse_bundle_metadata(Some(&json!("[1,2,3]"))), None);
+        assert_eq!(parse_bundle_metadata(Some(&json!("null"))), None);
+        assert_eq!(parse_bundle_metadata(Some(&json!([1, 2, 3]))), None);
+        assert_eq!(parse_bundle_metadata(Some(&json!(0))), None);
+        assert_eq!(parse_bundle_metadata(Some(&json!(false))), None);
+    }
+
+    #[test]
+    fn require_bundle_patch_payload_matches_upstream() {
+        use serde_json::json;
+        let id = "bundle-1";
+
+        assert_eq!(
+            require_bundle_patch_payload(json!({ "enabled": false }), id),
+            Ok(json!({ "enabled": false })),
+        );
+        // An array body collapses to its FIRST element.
+        assert_eq!(
+            require_bundle_patch_payload(json!([{ "enabled": false }, { "enabled": true }]), id),
+            Ok(json!({ "enabled": false })),
+        );
+        // A matching id is stripped.
+        assert_eq!(
+            require_bundle_patch_payload(json!({ "id": id, "enabled": false }), id),
+            Ok(json!({ "enabled": false })),
+        );
+        // `id !== void 0` -- an explicit null counts as PRESENT, so it is a mismatch.
+        assert_eq!(
+            require_bundle_patch_payload(json!({ "id": null }), id),
+            Err("Bundle id mismatch"),
+        );
+        assert_eq!(
+            require_bundle_patch_payload(json!({ "id": "other" }), id),
+            Err("Bundle id mismatch"),
+        );
+        for body in [json!([]), json!(null), json!("nope"), json!(7), json!(true)] {
+            assert_eq!(
+                require_bundle_patch_payload(body.clone(), id),
+                Err("Invalid bundle payload"),
+                "body {body} must be rejected"
+            );
+        }
     }
 
     // --- list filters ---------------------------------------------------------------------
@@ -2756,7 +3444,7 @@ mod tests {
     #[test]
     fn single_field_patch_is_well_formed_and_app_scoped() {
         let payload = UpdateBundlePayload {
-            enabled: Some(false),
+            enabled: Some(Some(false)),
             ..Default::default()
         };
         let qb = build_update_query(payload, "my-app".to_string(), "bundle-1".to_string()).unwrap();
@@ -2769,10 +3457,10 @@ mod tests {
     #[test]
     fn multi_field_patch_separates_assignments_with_commas() {
         let payload = UpdateBundlePayload {
-            platform: Some("android".to_string()),
-            should_force_update: Some(true),
-            message: Some("hello".to_string()),
-            target_cohorts: Some(vec!["1".to_string()]),
+            platform: Some(Some("android".to_string())),
+            should_force_update: Some(Some(true)),
+            message: Some(Some("hello".to_string())),
+            target_cohorts: Some(Some(vec!["1".to_string()])),
             ..Default::default()
         };
         let qb = build_update_query(payload, "my-app".to_string(), "bundle-1".to_string()).unwrap();
@@ -2788,7 +3476,7 @@ mod tests {
         // A caller-controlled value must reach the statement as a placeholder, whatever
         // it contains.
         let payload = UpdateBundlePayload {
-            channel: Some("production'; DROP TABLE bundles--".to_string()),
+            channel: Some(Some("production'; DROP TABLE bundles--".to_string())),
             ..Default::default()
         };
         let qb = build_update_query(payload, "my-app".to_string(), "b'--".to_string()).unwrap();
@@ -2803,23 +3491,25 @@ mod tests {
         // If a future field is added to `UpdateBundlePayload` and wired up with a
         // caller-supplied column name, this assertion is what catches it.
         let payload = UpdateBundlePayload {
-            id: Some("bundle-1".to_string()),
-            platform: Some("ios".to_string()),
-            should_force_update: Some(true),
-            enabled: Some(true),
-            file_hash: Some("h".to_string()),
-            git_commit_hash: Some("g".to_string()),
-            message: Some("m".to_string()),
-            channel: Some("production".to_string()),
-            storage_uri: Some("s3://b/k".to_string()),
-            target_app_version: Some("1.0.0".to_string()),
-            fingerprint_hash: Some("fp".to_string()),
-            metadata: Some(serde_json::json!({"a": 1})),
-            rollout_cohort_count: Some(500),
-            target_cohorts: Some(vec!["beta".to_string()]),
-            manifest_storage_uri: Some("s3://b/m".to_string()),
-            manifest_file_hash: Some("mh".to_string()),
-            asset_base_storage_uri: Some("s3://b/a".to_string()),
+            platform: Some(Some("ios".to_string())),
+            should_force_update: Some(Some(true)),
+            enabled: Some(Some(true)),
+            file_hash: Some(Some("h".to_string())),
+            git_commit_hash: Some(Some("g".to_string())),
+            message: Some(Some("m".to_string())),
+            channel: Some(Some("production".to_string())),
+            storage_uri: Some(Some("s3://b/k".to_string())),
+            target_app_version: Some(Some("1.0.0".to_string())),
+            fingerprint_hash: Some(Some("fp".to_string())),
+            metadata: Some(Some(serde_json::json!({"a": 1}))),
+            rollout_cohort_count: Some(Some(500)),
+            target_cohorts: Some(Some(vec!["beta".to_string()])),
+            manifest_storage_uri: Some(Some("s3://b/m".to_string())),
+            manifest_file_hash: Some(Some("mh".to_string())),
+            asset_base_storage_uri: Some(Some("s3://b/a".to_string())),
+            // `patches` writes ROWS, not a column, so it never appears in this statement --
+            // `update_bundle` handles it separately. Setting it here proves that.
+            patches: Some(Some(serde_json::json!([]))),
         };
         let qb = build_update_query(payload, "my-app".to_string(), "bundle-1".to_string()).unwrap();
         let sql = qb.sql();
@@ -2832,10 +3522,197 @@ mod tests {
         assert!(sql.ends_with(" WHERE app_name = ? AND id = ?"));
     }
 
+    /// An explicit null must reach the statement as a SET, not be silently dropped. Before the
+    /// double option this produced NO statement at all: `{"message": null}` answered
+    /// `200 {"success":true}` and left the row untouched, so a nullable column could never be
+    /// cleared through the API.
+    #[test]
+    fn an_explicit_null_clears_a_nullable_column() {
+        let payload = UpdateBundlePayload {
+            message: Some(None),
+            ..Default::default()
+        };
+        let qb = build_update_query(payload, "my-app".to_string(), "bundle-1".to_string()).unwrap();
+        assert_eq!(
+            qb.sql(),
+            "UPDATE bundles SET message = ? WHERE app_name = ? AND id = ?"
+        );
+
+        // An ABSENT key still produces nothing -- that is the distinction being drawn.
+        assert!(build_update_query(
+            UpdateBundlePayload::default(),
+            "my-app".to_string(),
+            "bundle-1".to_string()
+        )
+        .is_none());
+    }
+
+    /// `metadata` and `rolloutCohortCount` are NOT NULL with defaults, so an explicit null
+    /// RESETS them rather than clearing them -- `bundleToRow` writes `?? {}` and
+    /// `?? DEFAULT_ROLLOUT_COHORT_COUNT`.
+    #[test]
+    fn an_explicit_null_resets_the_defaulted_columns() {
+        let payload = UpdateBundlePayload {
+            metadata: Some(None),
+            rollout_cohort_count: Some(None),
+            ..Default::default()
+        };
+        let qb = build_update_query(payload, "my-app".to_string(), "bundle-1".to_string()).unwrap();
+        assert_eq!(
+            qb.sql(),
+            "UPDATE bundles SET rollout_cohort_count = ?, metadata = ? WHERE app_name = ? AND id = ?"
+        );
+    }
+
+    #[test]
+    fn an_explicit_null_on_a_not_null_column_is_rejected() {
+        for (field, payload) in [
+            (
+                "platform",
+                UpdateBundlePayload {
+                    platform: Some(None),
+                    ..Default::default()
+                },
+            ),
+            (
+                "enabled",
+                UpdateBundlePayload {
+                    enabled: Some(None),
+                    ..Default::default()
+                },
+            ),
+            (
+                "channel",
+                UpdateBundlePayload {
+                    channel: Some(None),
+                    ..Default::default()
+                },
+            ),
+            (
+                "storageUri",
+                UpdateBundlePayload {
+                    storage_uri: Some(None),
+                    ..Default::default()
+                },
+            ),
+            (
+                "fileHash",
+                UpdateBundlePayload {
+                    file_hash: Some(None),
+                    ..Default::default()
+                },
+            ),
+            (
+                "shouldForceUpdate",
+                UpdateBundlePayload {
+                    should_force_update: Some(None),
+                    ..Default::default()
+                },
+            ),
+        ] {
+            let err = validate_update_payload(&payload)
+                .expect_err("a null on a NOT NULL column must be rejected");
+            assert!(err.contains(field), "message {err:?} should name {field}");
+        }
+    }
+
+    /// The metadata merge, replayed from the recorded upstream cases. See
+    /// [`merge_bundle_metadata`] for the table these come from.
+    #[test]
+    fn merge_bundle_metadata_matches_es_toolkit() {
+        use serde_json::json;
+        let merge = |current: serde_json::Value, patch: serde_json::Value| {
+            merge_bundle_metadata(Some(&current), &patch)
+        };
+
+        assert_eq!(
+            merge(json!({"b":2,"nested":{"x":1}}), json!({"a":1})),
+            json!({"b":2,"nested":{"x":1},"a":1})
+        );
+        assert_eq!(
+            merge(json!({"nested":{"x":1}}), json!({"nested":{"y":2}})),
+            json!({"nested":{"x":1,"y":2}})
+        );
+        assert_eq!(merge(json!({"b":2}), json!({})), json!({"b":2}));
+        assert_eq!(merge(json!({"a":1}), json!({"a":2})), json!({"a":2}));
+        assert_eq!(
+            merge(json!({"a":{"deep":1}}), json!({"a":"flat"})),
+            json!({"a":"flat"})
+        );
+        assert_eq!(
+            merge(json!({"a":"flat"}), json!({"a":{"deep":1}})),
+            json!({"a":{"deep":1}})
+        );
+        // Index by index, keeping the stored tail. NOT a replace -- see the doc comment.
+        assert_eq!(
+            merge(json!({"a":[1,2,3]}), json!({"a":[9]})),
+            json!({"a":[9,2,3]})
+        );
+        assert_eq!(
+            merge(json!({"a":[9]}), json!({"a":[1,2,3]})),
+            json!({"a":[1,2,3]})
+        );
+        assert_eq!(merge(json!({"a":1}), json!({"a":null})), json!({"a":null}));
+        // No stored metadata at all: the patch is the result.
+        assert_eq!(merge_bundle_metadata(None, &json!({"a":1})), json!({"a":1}));
+    }
+
+    /// ONE PATCH BODY, TWO MERGE SEMANTICS -- the invariant a single-key test cannot catch.
+    ///
+    /// `metadata` deep merges; `targetCohorts` and `patches` are REPLACED, because those two
+    /// are upstream's `REPLACE_ON_UPDATE_KEYS`. Anyone unifying the three into one "helpful"
+    /// rule breaks exactly one of them, and only a test that exercises them in the SAME
+    /// request notices. This is the sibling of `truthy_and_nullable_rules_are_not_the_same_rule`
+    /// in the query-parameter layer.
+    #[test]
+    fn one_patch_body_has_two_merge_semantics() {
+        use serde_json::json;
+
+        let stored_metadata = json!({"kept": 1});
+        let stored_cohorts = ["alpha".to_string(), "beta".to_string()];
+
+        let patch_metadata = json!({"added": true});
+        let patch_cohorts = vec!["gamma".to_string()];
+
+        // metadata MERGES: the stored key survives alongside the new one.
+        let merged_metadata = merge_bundle_metadata(Some(&stored_metadata), &patch_metadata);
+        assert_eq!(merged_metadata, json!({"kept": 1, "added": true}));
+        assert!(
+            merged_metadata.get("kept").is_some(),
+            "metadata must MERGE -- if this fails someone turned it into a replace"
+        );
+
+        // targetCohorts REPLACES: the stored list is gone entirely.
+        let payload = UpdateBundlePayload {
+            target_cohorts: Some(Some(patch_cohorts.clone())),
+            ..Default::default()
+        };
+        let replaced = payload
+            .target_cohorts
+            .as_ref()
+            .and_then(Option::as_ref)
+            .expect("supplied");
+        assert_eq!(replaced, &patch_cohorts);
+        assert!(
+            !replaced.iter().any(|c| stored_cohorts.contains(c)),
+            "targetCohorts must REPLACE -- if this fails someone turned it into a merge"
+        );
+
+        // patches REPLACES too, and an empty list clears rather than preserves.
+        assert!(get_bundle_patches(Some(&json!([]))).is_empty());
+        assert_eq!(
+            get_bundle_patches(Some(&json!([sample_patch(
+                "0198f0c1-0000-7c3d-8e4f-5a6b7c8d9e0f"
+            )])))
+            .len(),
+            1
+        );
+    }
+
     #[test]
     fn validate_update_payload_rejects_oversized_text() {
         let payload = UpdateBundlePayload {
-            storage_uri: Some("a".repeat(MAX_TEXT_BYTES + 1)),
+            storage_uri: Some(Some("a".repeat(MAX_TEXT_BYTES + 1))),
             ..Default::default()
         };
         assert!(validate_update_payload(&payload).is_err());

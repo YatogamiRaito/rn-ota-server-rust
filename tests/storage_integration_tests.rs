@@ -609,10 +609,21 @@ async fn an_update_response_never_carries_a_null_file_url() {
 
 /// The refused-connection case: the store is dead and says so immediately, so nothing here
 /// depends on a timeout. Kept distinct from
-/// `update_check_degrades_when_the_object_store_times_out`, which is the case a timeout is
-/// what ends.
+/// `update_check_fails_within_the_storage_budget_when_the_store_is_silent`, which is the case a
+/// timeout is what ends.
+///
+/// **This test asserted the opposite until the artifact failure policy was aligned with
+/// upstream.** It required 200 with `manifestUrl`/`changedAssets` degraded to null, on the
+/// reasoning that artifacts are only a download optimisation and a 5xx stalls a rollout.
+/// Upstream propagates instead — `resolveManifestArtifacts` awaits `readStorageText` and
+/// `resolveFileUrl` with no `try` — and exact compatibility was chosen over the degradation.
+/// Recorded as artifact fixture cases F04/F05.
+///
+/// What it still guards, and what it was always really for: the request must TERMINATE rather
+/// than hang, and it must never answer `UPDATE` with a null `fileUrl`, which the device reads as
+/// "wipe every downloaded bundle" (see `docs/upstream-parity.md` §3.4).
 #[tokio::test]
-async fn update_check_survives_an_unreachable_object_store() {
+async fn update_check_fails_when_the_object_store_is_unreachable() {
     let Some(bucket) = TestBucket::create().await else {
         return;
     };
@@ -641,28 +652,33 @@ async fn update_check_survives_an_unreachable_object_store() {
     .await
     .expect("update-check hung while the store was unreachable");
 
+    // The manifest cannot be read, and upstream turns an unreadable manifest into a failed
+    // check rather than an update with no diff.
     assert_eq!(
-        resp.status, 200,
-        "storage being down must not 500 the check"
+        resp.status,
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "an unreadable manifest must fail the check, as upstream does: {}",
+        resp.text()
     );
-    let body = resp.json();
-    assert_eq!(body["status"], "UPDATE");
-    // Presigning is local signing, so a fileUrl is still produced even though nothing can be
-    // reached — the device gets a URL that will fail at download time rather than no update.
-    assert!(body["fileUrl"].is_string(), "{body}");
-    // The manifest genuinely needs the store, so those fields degrade to null and the device
-    // falls back to a full download.
-    assert!(body["manifestUrl"].is_null(), "{body}");
-    assert!(body["changedAssets"].is_null(), "{body}");
+    // A failed check is retried harmlessly. What must never happen is a 200 carrying an UPDATE
+    // with no download URL.
+    assert!(
+        !resp.text().contains("\"fileUrl\":null"),
+        "a failed check must not answer with a null fileUrl: {}",
+        resp.text()
+    );
 }
 
 /// What a device gets while the store is silent rather than dead — the case the timeout is what
-/// ends. The manifest read cannot complete, so the whole request rides on the storage budget;
-/// the check must still answer 200 with a usable (if unoptimised) update rather than 500 or
-/// hang. This is the degradation policy in `resolve_manifest_artifacts` finally being able to
-/// take effect: before the timeouts existed it could not, because the call never returned.
+/// ends. The manifest read cannot complete, so the whole request rides on the storage budget.
+///
+/// **The status this asserts was inverted** when the artifact failure policy was aligned with
+/// upstream: it used to require 200-with-degraded-artifacts, it now requires a clean 5xx. The
+/// part that has not changed, and is the whole reason this test exists, is the BOUND — the check
+/// must answer within the configured storage budget instead of hanging while the peer holds the
+/// socket open. Before `StorageTimeoutConfig` existed it could not answer at all.
 #[tokio::test]
-async fn update_check_degrades_when_the_object_store_times_out() {
+async fn update_check_fails_within_the_storage_budget_when_the_store_is_silent() {
     let Some(bucket) = TestBucket::create().await else {
         return;
     };
@@ -706,18 +722,15 @@ async fn update_check_degrades_when_the_object_store_times_out() {
 
     assert_eq!(
         resp.status,
-        200,
-        "a silent store must not 500 the check: {}",
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "an unreadable manifest must fail the check, as upstream does: {}",
         resp.text()
     );
-    let body = resp.json();
-    assert_eq!(body["status"], "UPDATE");
-    // Signing is local, so the device still gets a bundle URL and the update ships.
-    assert!(body["fileUrl"].is_string(), "{body}");
-    // The manifest diff needed the store and gave up; the device re-downloads every asset,
-    // which is correct-but-slower rather than broken.
-    assert!(body["manifestUrl"].is_null(), "{body}");
-    assert!(body["changedAssets"].is_null(), "{body}");
+    assert!(
+        !resp.text().contains("\"fileUrl\":null"),
+        "a failed check must not answer with a null fileUrl: {}",
+        resp.text()
+    );
 }
 
 /// Regression lock. The name describes the defect this holds shut, not the current behaviour.

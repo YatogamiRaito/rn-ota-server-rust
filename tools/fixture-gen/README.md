@@ -13,6 +13,11 @@ looking in the wrong one. The authoritative locations, all at the pinned version
 | `tests/fixtures/decision_fixtures.json` | `tests/generate_decision_fixtures.mjs` | `getUpdateInfo` decisions (appVersion + fingerprint) | `@hot-updater/js` (`dist/index.mjs`), with cohort eligibility from `@hot-updater/core` |
 | `tests/fixtures/semver_fixtures.json` | `tests/generate_semver_fixtures.mjs` | `semverSatisfies` + npm `semver` `coerce` | `@hot-updater/plugin-core` and the `semver` package |
 | `tests/fixtures/pagination_fixtures.json` | `tests/generate_pagination_fixtures.mjs` | `calculatePagination`, `buildCursorPageQuery`, `createPaginatedResult` | `@hot-updater/plugin-core` (`dist/createDatabasePlugin.mjs`) |
+| `tests/fixtures/artifacts_fixtures.json` | `tests/generate_artifacts_fixtures.mjs` | `resolveManifestArtifacts`, `resolveHbcPatchDescriptor`, `resolveUniqueHbcAssetPath`, `resolveChangedAssets` (incl. the brotli `.br` rule), `makeResponse` | `@hot-updater/server` (`dist/db/updateArtifacts.mjs`, `dist/db/pluginCore.mjs`) |
+| ″ | ″ | `resolveManifestAssetStorageUri`, `getBundlePatch` — **cross-check only**, never a second source of truth | `@hot-updater/plugin-core`, `@hot-updater/core` |
+| `tests/fixtures/cli_api_fixtures.json` | `tests/generate_cli_api_fixtures.mjs` | The bundle response body: field set, casing, omitted-vs-null, patch ordering | `@hot-updater/server` (`dist/db/bundleRows.mjs` `rowToBundle`, via `createHandler`) |
+| ″ | ″ | POST `CLIBundle` acceptance, defaults and the patches array | `@hot-updater/server` (`dist/db/pluginCore.mjs`, `dist/db/schemaEnhancements.mjs`, `dist/db/bundleRows.mjs`) |
+| ″ | ″ | PATCH `UpdateBundlePayload`: which fields are patchable, which columns an explicit null may clear, and the two merge semantics | `@hot-updater/server` (`requireBundlePatchPayload`) + `@hot-updater/plugin-core` (`mergeBundleUpdate`) |
 | ″ | ″ | every `GET /bundles` query-parameter rule: `limit`, `page`, `platform`, booleans, repeated arrays, nullable strings, truthy strings | `@hot-updater/server` (`dist/handler.mjs`) |
 
 > **`@hot-updater/server` does NOT implement cursor pagination.** Nothing in it declares
@@ -23,6 +28,34 @@ looking in the wrong one. The authoritative locations, all at the pinned version
 > HTTP query-parameter layer (`dist/handler.mjs:134-186`).
 
 `tests/fixtures.json` (cohort/hash vectors) is checked in as static data and has no generator.
+
+> **`bundleRows.mjs` is imported by explicit path and that is deliberate.** It is not in
+> `@hot-updater/server`'s `exports` map, but all four shipped SQL adapters — kysely, drizzle,
+> prisma, mongodb — map their rows with `rowToBundle`/`bundleToRow`, so it *is* upstream's
+> database-row ↔ `Bundle` contract, which is what `map_to_client_bundle` and `CLIBundle` mirror.
+> The alternative — reconstructing the body by hand — would be a second implementation written to
+> agree with the first, which is exactly what a fixture is supposed to avoid.
+
+> **`metadata` is the only key upstream ever omits from a bundle body.** `parseBundleMetadata`
+> returns `undefined` for a NULL, unparseable or non-object column, and `JSON.stringify` drops it.
+> Every other key is always present, carrying `null`. Recording `bundleKeys` per case is what
+> keeps that distinction from being erased by JSON, and `undefinedKeys` does the same for the
+> persisted rows — upstream applies no column defaults at all.
+
+> **The artifacts fixtures record `s3://` storage URIs, not presigned URLs.** The generator logs
+> every URI→URL pair its fake storage plugin hands out and inverts the response through that log;
+> a URL not in the log makes the generator throw. That fake plugin mirrors the one failure
+> `src/storage.rs` produces locally (bucket mismatch), which is what makes the failure cases
+> reproducible on the Rust side. The replay is two-layered: the pure `plan_manifest_artifacts`
+> (80 cases, no Docker) and the full HTTP route against MySQL + MinIO.
+
+> **Two rules in the CLI-API fixtures are the ones a later reader is most likely to "simplify".**
+> `updateBundleCases` pins *which* columns an explicit `null` may clear — the eight nullable ones
+> clear, `metadata` and `rolloutCohortCount` reset to their defaults instead, and the six NOT NULL
+> ones are refused. And a single PATCH body carries two opposite merge semantics: `metadata` deep
+> merges (nested arrays merge index by index, so `[1,2,3]` patched with `[9]` gives `[9,2,3]`, and
+> a key can never be removed) while `targetCohorts` and `patches` are replaced whole. Cases that
+> exercise both in one request exist precisely so unifying them fails loudly.
 
 ## Running the generators
 
@@ -43,6 +76,8 @@ Then run the generators from the repository root — no environment variables ne
 node tests/generate_decision_fixtures.mjs   > tests/fixtures/decision_fixtures.json
 node tests/generate_semver_fixtures.mjs     > tests/fixtures/semver_fixtures.json
 node tests/generate_pagination_fixtures.mjs > tests/fixtures/pagination_fixtures.json
+node tests/generate_artifacts_fixtures.mjs  > tests/fixtures/artifacts_fixtures.json
+node tests/generate_cli_api_fixtures.mjs 2>/dev/null > tests/fixtures/cli_api_fixtures.json
 ```
 
 > Note: these commands used to be documented as `NODE_PATH=tools/fixture-gen/node_modules

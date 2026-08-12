@@ -14,7 +14,9 @@ skeleton, but the decision logic and semver behavior come from separate packages
 | Rust file             | Upstream source (0.35.12)                                      | What was ported                                                                                |
 | --------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `src/routes/mod.rs`   | `@hot-updater/server` → `dist/handler.mjs` (`createHandler`)   | Route table: `app-version/*`, `fingerprint/*`, `api/bundles*` — path shapes match exactly       |
-| `src/routes/check.rs` | `@hot-updater/js` → `getUpdateInfo`                            | Update decision: UPDATE / ROLLBACK / UP_TO_DATE, rollout, minBundleId, manifest/patch resolution |
+| `src/routes/check.rs` `decide_update` | `@hot-updater/js` → `getUpdateInfo`            | Update decision: UPDATE / ROLLBACK / UP_TO_DATE, rollout, minBundleId                            |
+| `src/routes/check.rs` `plan_manifest_artifacts` | `@hot-updater/server` → `dist/db/updateArtifacts.mjs` | Manifest diff, content-addressed asset paths, brotli `.br` rule, bsdiff patch descriptor |
+| `src/routes/check.rs` `make_response` | `@hot-updater/server` → `dist/db/pluginCore.mjs` | Response shape: forced rollback, which keys are omitted rather than nulled                      |
 | `src/routes/api.rs`   | `@hot-updater/server` → `dist/handler.mjs` (`handleGetBundles`, query-param layer) | Query-parameter contract: `limit`/`page`/`offset`, `platform`, the `getAll` array params, booleans, nullable strings — including the exact 400 messages |
 | `src/routes/api.rs`   | `@hot-updater/plugin-core` → `dist/createDatabasePlugin.mjs` (`getBundlesWithLegacyCursorFallback`) | Cursor pagination: `buildCursorPageQuery`, `createPaginatedResult`, `calculatePagination`        |
 | `src/routes/api.rs`   | `@hot-updater/server` → `dist/handler.mjs` CLI handlers        | `insertBundle`, `updateBundleById`, `deleteBundleById`                                          |
@@ -24,7 +26,8 @@ skeleton, but the decision logic and semver behavior come from separate packages
 | `src/storage.rs`      | `@hot-updater/aws` → `s3Storage` (presign path)                | `s3://` URI parsing + S3/R2 presigned URL generation                                             |
 | `migrations/*.sql`    | `@hot-updater/server` → `dist/schema/v0_31_0.mjs`              | `bundles`, `bundle_patches`, `hot_updater_settings` tables                                       |
 
-**Evidence:** `tests/generate_decision_fixtures.mjs` calls the real `@hot-updater/js`
+**Evidence:** `tests/generate_artifacts_fixtures.mjs` drives the real
+`createHotUpdater(...).getAppUpdateInfo`; `tests/generate_decision_fixtures.mjs` calls the real `@hot-updater/js`
 `getUpdateInfo`, and `tests/generate_semver_fixtures.mjs` calls the real
 `@hot-updater/plugin-core` `semverSatisfies`, recording input/output pairs;
 `tests/decision_tests.rs` and `tests/semver_parity_tests.rs` verify the Rust side against those
@@ -232,13 +235,188 @@ guard compares bundle ids, and the id genuinely is newer than the built-in one).
 this server emits with `file_url: None` is `Decision::InitRollback`, which carries `NIL_UUID` and
 `ROLLBACK` — upstream's `INIT_BUNDLE_ROLLBACK_UPDATE_INFO` shape exactly.
 
-`manifestUrl`, `manifestFileHash` and `changedAssets` are unaffected and still degrade to null on a
-storage failure. That is also upstream's behaviour (`updateArtifacts.ts` `fetchBundleManifest`
-returns null `if (!fileUrl)`, and `resolveChangedAssets` drops the whole set rather than emitting a
-partial one): they are download optimisations, and losing them costs bytes, not correctness.
+**A correction, kept visible on purpose.** An earlier revision of this section claimed that
+`manifestUrl`, `manifestFileHash` and `changedAssets` degrading on a storage failure "is also
+upstream's behaviour", citing `fetchBundleManifest`'s `if (!fileUrl) return null`. That was wrong,
+and wrong in an instructive way: it conflated a manifest that is **absent** with one that could
+not be **read**. The same conflation was live in this server's code and is defect 8 of §3.7.
+
+What upstream actually does, measured rather than inferred:
+
+- `updateArtifacts.ts` performs four storage operations after the primary bundle is presigned, and
+  **catches exactly one** — the per-asset `resolveFileUrl`, and only when a bsdiff patch covers
+  that asset. Everything else, `resolveHbcPatchDescriptor`'s own presign included (it has no `try`
+  at all), propagates into `getAppUpdateInfo`, which awaits it without a catch, and becomes a 5xx.
+- The `if (!fileUrl) return null` arm is **not** a storage-failure path. With a storage plugin
+  registered, `resolveFileUrl` throws rather than returning a falsy value (`createStorageAccess`
+  raises `"Storage plugin returned empty fileUrl"`), so that arm is reachable only when
+  `storageUri` is itself null.
+- What upstream *does* treat as "no artifacts, ship the update anyway" is a manifest that is
+  **absent or malformed** — `readText` maps a missing object to `null` (`if (!response.ok) return
+  null`), `fetchBundleManifest` catches its own `JSON.parse`, and `isBundleManifest` rejects a
+  well-formed-but-wrong document. All three answer 200 with no artifacts.
+
+This server now matches all of it; see §3.7. Reading `fetchBundleManifest` and concluding "storage
+failures degrade" is an easy step to take — it took recording the real thing to see that `readText`
+returns null for one case and throws for the other.
 
 Guarded by `tests/storage_integration_tests.rs::an_update_response_never_carries_a_null_file_url`
 and `::update_check_fails_loudly_when_a_bundle_points_at_another_apps_bucket`.
+
+### 3.5 CLI API request/response bodies — recorded, and what it changed
+
+`tests/fixtures/cli_api_fixtures.json` (generated by `tests/generate_cli_api_fixtures.mjs`,
+replayed by `tests/cli_api_parity_tests.rs`) records the CLI API's **body** contract from the
+real 0.35.12 stack — `createHandler` over `createPluginDatabaseCore` over
+`createDatabasePlugin` over upstream's own `rowToBundle`/`bundleToRow`/`bundleToPatchRows`.
+132 cases. Ten defects it found, all now fixed:
+
+1. **`metadata` was emitted as `{}` where upstream omits the key.** `rowToBundle` sets
+   `metadata: parseBundleMetadata(record.metadata)`, which is `undefined` for a NULL,
+   unparseable or non-object column, and `JSON.stringify` drops it. `metadata` is the **only**
+   key a bundle body ever omits. `src/routes/api.rs` `parse_bundle_metadata` +
+   `ClientBundle::metadata: Option<_>` with `skip_serializing_if`.
+2. **`target_cohorts` holding the array as a JSON *string* parsed as `None`.** Upstream's
+   `parseTargetCohorts` parses that second layer. The old
+   `serde_json::from_value::<Vec<String>>` did not, so the bundle looked untargeted.
+3. **A single non-string element discarded the whole `target_cohorts` list.** Upstream
+   filters the offending entries and keeps the rest.
+   2 and 3 also affected **`src/routes/check.rs`**, which held a second copy of the same
+   stricter rule — on the device path, where it silently drops an explicit cohort list and
+   falls back to the rollout percentage. Both now call one `api::parse_target_cohorts`.
+4. **A malformed `patches[]` entry rejected the whole publish.** Upstream's
+   `readBundlePatchArray` filters entries that are not four strings, tolerates a non-array
+   `patches`, and de-duplicates repeated `baseBundleId`s keeping the first. `get_bundle_patches`
+   now mirrors it, and the old 400 `Duplicate patch baseBundleId "…"` is gone.
+5. **PATCH rejected bodies upstream accepts, and accepted one it rejects.**
+   `requireBundlePatchPayload` collapses an **array body to its first element**, 400s
+   `Invalid bundle payload` for a non-object, and treats a present `id` — **`null` included** —
+   that differs from the route id as `Bundle id mismatch`. A `Json<UpdateBundlePayload>`
+   extractor answered axum's generic 422 for the first two and let `{"id": null}` through.
+   `require_bundle_patch_payload` now mirrors it.
+6. **Every error body was `text/plain`; upstream's are JSON.** `createHandler` answers
+   `{"error": …}` (400/404) or `{"error": "Internal server error", "message": …}` (500), always
+   with `Content-Type: application/json`. A client calling `res.json()` on a failure — which
+   the CLI does — got a parse error instead of the message. `error_response()` in
+   `src/routes/api.rs` is now the single exit for every error in that module.
+
+7. **An explicit `null` in a PATCH was ignored, so no nullable column could ever be cleared.**
+   `mergeBundleUpdate` skips only `undefined`; a present `null` is assigned. A plain
+   `Option<T>` folds JSON `null` to `None`, which `build_update_query` read as "leave
+   unchanged" — so `PATCH {"message": null}` answered `200 {"success":true}` and left the row
+   untouched. `UpdateBundlePayload` now uses `Option<Option<T>>` throughout (see
+   `double_option`). The three classes, each recorded:
+   - the **eight nullable columns** (`git_commit_hash`, `message`, `target_app_version`,
+     `fingerprint_hash`, `target_cohorts`, and the three manifest/asset ones) → SET NULL;
+   - `metadata` → reset to `{}` and `rollout_cohort_count` → reset to `1000`, because
+     `bundleToRow` writes `?? {}` and `?? DEFAULT_ROLLOUT_COHORT_COUNT` and both columns are
+     NOT NULL with a default;
+   - the **six NOT NULL columns** (`platform`, `shouldForceUpdate`, `enabled`, `fileHash`,
+     `channel`, `storageUri`) → 400 naming the field. Upstream hands the adapter the null and
+     lets the *database* refuse it; the fixture's in-memory store enforces no constraints, so
+     upstream's HTTP answer there is unobservable. Both ends fail the request; only the status
+     and message differ, the same call as §3.6.
+8. **`patches` was not patchable at all.** It is one of upstream's two
+   `REPLACE_ON_UPDATE_KEYS`, so a PATCH carrying it replaces the whole set and `[]` clears it.
+   `UpdateBundlePayload` had no such field, so the key was dropped and the patch rows were
+   left untouched. It now writes rows, sharing a transaction with the column UPDATE.
+9. **`metadata` was replaced where upstream deep merges it.** `mergeBundleUpdate` is an
+   es-toolkit `mergeWith` and `metadata` is *not* in `REPLACE_ON_UPDATE_KEYS`, so objects
+   recurse, **arrays merge index by index** (`[1,2,3]` patched with `[9]` → `[9,2,3]`), and a
+   metadata key can never be removed. `merge_bundle_metadata` reproduces it; its doc comment
+   carries the recorded case for every rule, because this is precisely the behaviour a later
+   reader will try to "fix" into a replace.
+10. `bundle_patches` was read with `ORDER BY order_index ASC` alone, and upstream tie-breaks
+    equal indices on `base_bundle_id`. `patches[0]` fills the deprecated
+    `patchBaseBundleId`/`patch*` mirror fields, so an unstable order there is an unstable
+    response body. Both patch queries now order by `order_index ASC, base_bundle_id ASC`.
+
+> **One PATCH body, two merge semantics — do not unify them.** `metadata` deep merges;
+> `targetCohorts` and `patches` are replaced whole. Same request, same handler, opposite
+> behaviour, because the latter two are upstream's `REPLACE_ON_UPDATE_KEYS`. A case that
+> patches `metadata` **and** `targetCohorts` in the *same* body is recorded for exactly this
+> reason, and `one_patch_body_has_two_merge_semantics` asserts both halves — collapsing the
+> rules breaks one of them, and a single-key test would not notice. This is the sibling of the
+> truthy-vs-nullable query-parameter pair described in `tools/fixture-gen/README.md`.
+
+**Not a deviation, though it looks like one.** `patchBaseBundleId`, `patchBaseFileHash`,
+`patchFileHash` and `patchStorageUri` are accepted by a PATCH upstream and merged into its
+in-memory bundle, but `bundleToRow` has no column for any of them and `bundleToPatchRows`
+reads only `patches` — so they never reach storage and are regenerated from `patches[0]` on
+the way out. `UpdateBundlePayload` ignoring them is the same outcome.
+`tests/cli_api_parity_tests.rs` proves the column set from the recorded rows rather than
+trusting that claim.
+
+### 3.6 Payload-validation failures answer 400 here, 500 upstream
+
+`assertBundlePersistenceConstraints` throws a plain `Error`, so it reaches `createHandler`'s
+catch-all rather than its `HandlerBadRequestError` branch:
+
+```
+POST /api/bundles  {"targetAppVersion": null, "fingerprintHash": null, …}
+upstream: 500 {"error":"Internal server error","message":"Bundle must define either targetAppVersion or fingerprintHash."}
+here    : 400 {"error":"Bundle must define either targetAppVersion or fingerprintHash."}
+```
+
+Same for `rolloutCohortCount must be an integer between 0 and 1000.`, the
+`Invalid target cohort "…"` message, and `targetBundleId not found` for a PATCH against a
+missing bundle (404 `Bundle not found` here). **The message text matches exactly** — only the
+status and the envelope key differ.
+
+**Kept deliberately, and the evidence rather than the principle.** The worry was that a client
+reading `.message` would see the reason from upstream and nothing from us. Three findings
+settle it:
+
+1. **No upstream client calls these endpoints at all.** Across `hot-updater@0.35.12`,
+   `@hot-updater/console@0.35.12` and every server-side package, the only references to
+   `api/bundles` are `@hot-updater/server`'s own handler and its own specs. The CLI bundle
+   makes two `fetch` calls in total and neither is to a bundles route — it publishes through
+   its configured *database plugin*, and the console does the same through server functions.
+   `createHandler` even defaults `routes.bundles` to **`false`**. These endpoints exist for
+   third-party consumers, which is what this server's users are.
+2. **Upstream's own specs read `.error`, never `.message`.** `handler.spec.ts` asserts
+   `response.json()` resolves to `{ error: "<the real message>" }` for every 400 it covers.
+   Our 400s carry the real message in `.error`, so a client written against those specs reads
+   it correctly from us.
+3. **The 500 shape is untested and incidental.** No spec exercises a constraint violation
+   through the HTTP handler at all — `pluginCore.spec.ts:1038` asserts
+   `rejects.toThrow("Bundle must define either targetAppVersion or fingerprintHash.")` at the
+   *api* level. The 500 is what happens to fall out of a plain `Error` reaching the catch-all,
+   not a designed contract.
+
+So no real client's field-reading behaviour is broken by the 400, and matching the 500 would
+mean deliberately reporting a caller error as a server error while *losing* the message from
+the `.error` field that upstream's own tests read. Recorded in
+`tests/fixtures/cli_api_fixtures.json` so it stays a decision rather than an accident.
+
+### 3.7 Artifact resolution — recorded, and the deviation it removed
+
+`tests/fixtures/artifacts_fixtures.json` (generated by `tests/generate_artifacts_fixtures.mjs`,
+replayed by `tests/artifacts_parity_tests.rs`) records the artifact layer from the real 0.35.12
+stack through the public `createHotUpdater({database, storages}).getAppUpdateInfo`:
+`resolveManifestArtifacts`, `resolveHbcPatchDescriptor`, `resolveUniqueHbcAssetPath`,
+`resolveChangedAssets` and `makeResponse`. 101 cases.
+
+**There is no deviation left on this surface.** This server previously degraded — 200 with fewer
+artifacts — where upstream throws, on five recorded cases. It now propagates, matching upstream,
+and `KNOWN_DEGRADE_INSTEAD_OF_5XX` in the replay is empty with an assertion that the deviating set
+equals it exactly, so a new divergence cannot appear unnoticed.
+
+**Upstream's one catch is preserved and pinned.** `resolveChangedAssets` swallows a per-asset
+presign failure only when a bsdiff patch covers that asset — that asset is emitted with `patch`
+and no `file`, because the device can still reconstruct it. Everything else propagates.
+`the_per_asset_presign_catch_is_exactly_as_wide_as_upstreams` asserts the catch is neither
+widened nor narrowed, and was verified to fail in both directions.
+
+Eight defects were found here and all are fixed; each carries a `bug_*` regression lock named
+after the symptom. The one worth knowing about is the last, because it was found *by* removing
+the deviation above rather than by the recording alone: `readText` maps a **missing** object to
+`null` and only **throws** on a real failure, so "the manifest was never uploaded" and "storage is
+down" are different answers upstream. This server conflated them. Propagating naively would have
+turned every bundle published before the manifest columns existed into a permanent 500 — a total
+outage for those bundles, introduced in the name of compatibility. `read_s3_file_optional` keeps
+the two apart, and `bug_a_missing_manifest_object_was_conflated_with_an_unreadable_one` locks it.
+---
 
 ## 4. Procedure for an upstream upgrade
 
@@ -270,6 +448,9 @@ cd ios && pod install
 
 - `dist/handler.mjs` route table or query parameters → `src/routes/mod.rs` + `api.rs`
 - `@hot-updater/js` `getUpdateInfo` → `src/routes/check.rs` (caught by the fixture test)
+- `@hot-updater/server` `dist/db/updateArtifacts.mjs` (manifest diff, `sha256/xx/<hash><ext>`
+  paths, the brotli `.br` rule, the bsdiff descriptor) → `src/routes/check.rs`
+  `plan_manifest_artifacts` (caught by `tests/artifacts_parity_tests.rs`)
 - `plugin-core/semverSatisfies` → `src/semver.rs` (caught by the fixture test)
 - New `dist/schema/v0_XX_X.mjs` version → new `migrations/*.sql` + `hot_updater_settings.version`
 - New field on `@hot-updater/core` `Bundle` → `src/models.rs` + migration + `api.rs` map functions
@@ -278,6 +459,19 @@ cd ios && pod install
 ---
 
 ## Changelog
+
+- **2026-08-12** — Manifest/asset-diff parity. 101 cases recorded from the real 0.35.12
+  `updateArtifacts.ts` / `pluginCore.ts` through the public `getAppUpdateInfo`
+  (`tests/fixtures/artifacts_fixtures.json`). Seven defects found and fixed in
+  `src/routes/check.rs`: a panic on a manifest `fileHash` shorter than two bytes, backslash
+  normalisation making a non-brotli asset look brotli, `encodeURIComponent`/empty-segment
+  differences in the storage key, case-insensitive bsdiff base matching, empty strings treated as
+  present where upstream treats them as absent, manifest validation looser than `isBundleManifest`,
+  and optional keys serialised as `null` where upstream omits them. `plan_manifest_artifacts` was
+  extracted as a pure function so the rules replay without Docker. §3.4's claim about degradation
+  was corrected — it conflated an absent manifest with an unreadable one, and so did the code; the
+  artifact layer now propagates storage failures exactly as upstream does, leaving no deviation on
+  that surface. Recorded as §3.7.
 
 - **2026-08-11** — Storage layer hardening. Recorded §3.4: a presign failure for the primary
   bundle now fails the update-check (5xx) instead of answering `UPDATE` with `fileUrl: null`,
