@@ -10,7 +10,9 @@ use tracing::{error, warn};
 use crate::cohort::is_cohort_eligible_for_update;
 use crate::config::AppStorageConfig;
 use crate::models::{Bundle, BundlePatch};
-use crate::observability::{record_update_check, UpdateOutcome};
+use crate::observability::{
+    record_update_check, record_update_check_degraded, DegradedReason, UpdateOutcome,
+};
 use crate::semver::{coerce_version, satisfies};
 use crate::storage::get_presigned_url;
 use crate::AppState;
@@ -250,6 +252,10 @@ async fn resolve_hbc_patch_descriptor(
                 error = %err,
                 "Failed to presign bsdiff patch; device will download the full bundle instead"
             );
+            record_update_check_degraded(
+                &current_bundle.app_name,
+                DegradedReason::PatchUnavailable,
+            );
             return None;
         }
     };
@@ -310,6 +316,7 @@ async fn resolve_manifest_artifacts(
                 "Failed to read target manifest from S3 {}: {}",
                 manifest_uri, err
             );
+            record_update_check_degraded(&bundle.app_name, DegradedReason::ManifestUnavailable);
             return None;
         }
     };
@@ -321,6 +328,7 @@ async fn resolve_manifest_artifacts(
                 "Failed to parse target manifest JSON from {}: {}",
                 manifest_uri, err
             );
+            record_update_check_degraded(&bundle.app_name, DegradedReason::ManifestUnavailable);
             return None;
         }
     };
@@ -332,6 +340,7 @@ async fn resolve_manifest_artifacts(
                 "Failed to generate presigned url for manifest of bundle {}: {}",
                 bundle.id, err
             );
+            record_update_check_degraded(&bundle.app_name, DegradedReason::ManifestUnavailable);
             return None;
         }
     };
@@ -367,6 +376,10 @@ async fn resolve_manifest_artifacts(
                     error = %err,
                     "Failed to load the device's current bundle; serving the update without a \
                      manifest diff (every asset re-downloaded)"
+                );
+                record_update_check_degraded(
+                    &bundle.app_name,
+                    DegradedReason::CurrentBundleUnavailable,
                 );
                 None
             }
@@ -429,6 +442,7 @@ async fn resolve_manifest_artifacts(
                 "Failed to load bundle patches; serving the update without a bsdiff patch \
                  (device downloads the full bundle)"
             );
+            record_update_check_degraded(&bundle.app_name, DegradedReason::PatchUnavailable);
             Vec::new()
         }
     };
@@ -546,6 +560,7 @@ async fn make_response(
                 "Failed to presign the bundle; failing the update-check rather than telling the \
                  device to update with nothing to download"
             );
+            record_update_check_degraded(&bundle.app_name, DegradedReason::PresignFailed);
             err
         })?;
 
@@ -711,29 +726,24 @@ async fn evaluate_update(
         &params.min_bundle_id,
     );
 
-    // Observability only: a counter increment, no effect on the decision or the response.
     // InitRollback is folded into ROLLBACK because that is what the client is told.
-    record_update_check(
-        &params.app_name,
-        &params.platform,
-        match &decision {
-            Decision::Update(_) => UpdateOutcome::Update,
-            Decision::Rollback(_) | Decision::InitRollback => UpdateOutcome::Rollback,
-            Decision::NoUpdate => UpdateOutcome::UpToDate,
-        },
-    );
+    let outcome = match &decision {
+        Decision::Update(_) => UpdateOutcome::Update,
+        Decision::Rollback(_) | Decision::InitRollback => UpdateOutcome::Rollback,
+        Decision::NoUpdate => UpdateOutcome::UpToDate,
+    };
 
-    match decision {
-        Decision::Update(b) => Ok(Some(
-            make_response(state, &b, "UPDATE", &params.bundle_id, storage).await?,
-        )),
-        Decision::Rollback(b) => Ok(Some(
-            make_response(state, &b, "ROLLBACK", &params.bundle_id, storage).await?,
-        )),
+    let response = match decision {
+        Decision::Update(b) => {
+            Some(make_response(state, &b, "UPDATE", &params.bundle_id, storage).await?)
+        }
+        Decision::Rollback(b) => {
+            Some(make_response(state, &b, "ROLLBACK", &params.bundle_id, storage).await?)
+        }
         // The one legitimate `file_url: null`: upstream's INIT_BUNDLE_ROLLBACK_UPDATE_INFO, the
         // reset-to-built-in shape the null is reserved for. It carries NIL_UUID and ROLLBACK,
         // which is exactly what the client checks for before treating a null url as a reset.
-        Decision::InitRollback => Ok(Some(AppUpdateInfo {
+        Decision::InitRollback => Some(AppUpdateInfo {
             id: NIL_UUID.to_string(),
             status: "ROLLBACK".to_string(),
             should_force_update: true,
@@ -743,9 +753,18 @@ async fn evaluate_update(
             manifest_url: None,
             manifest_file_hash: None,
             changed_assets: None,
-        })),
-        Decision::NoUpdate => Ok(None),
-    }
+        }),
+        Decision::NoUpdate => None,
+    };
+
+    // Counted here rather than beside the decision, because `make_response` can fail and
+    // the `?` above returns before this line. A presign failure is answered with a 500, and
+    // counting the decision first would report an UPDATE that no device received -- the
+    // reading an operator takes from this metric is "updates shipped", so during a storage
+    // incident the graph would look healthy while every device got nothing.
+    record_update_check(&params.app_name, &params.platform, outcome);
+
+    Ok(response)
 }
 
 // Helper to fetch and evaluate app version candidates

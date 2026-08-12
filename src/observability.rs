@@ -39,6 +39,8 @@ pub const METRIC_HTTP_REQUESTS: &str = "ota_http_requests_total";
 pub const METRIC_HTTP_DURATION: &str = "ota_http_request_duration_seconds";
 /// Counter: update-check decisions, labelled `app`, `platform`, `outcome`.
 pub const METRIC_UPDATE_CHECKS: &str = "ota_update_checks_total";
+/// Counter: update-checks served in a reduced form or failed, labelled `app`, `reason`.
+pub const METRIC_UPDATE_CHECKS_DEGRADED: &str = "ota_update_check_degraded_total";
 /// Gauge: connections currently held by the MySQL pool.
 pub const METRIC_DB_POOL_CONNECTIONS: &str = "ota_db_pool_connections";
 /// Gauge: idle connections in the MySQL pool.
@@ -154,12 +156,64 @@ impl UpdateOutcome {
     }
 }
 
+/// Why an update-check was served in a reduced form, or could not be served at all.
+///
+/// These are the paths where the server keeps going after something failed. Each one is
+/// already logged at `warn`, but a log line is not something you can alert on or graph:
+/// a storage backend that has started failing shows up as an unexplained rise in 500s,
+/// or — for the degraded cases — as nothing at all, because the device still gets a
+/// working update and merely pays for the full download.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DegradedReason {
+    /// The primary bundle could not be presigned. This is the one case that is *not* a
+    /// degradation: the request fails with 500 rather than handing the device a null
+    /// `fileUrl`, which it would read as "reset to the built-in bundle". See
+    /// `docs/upstream-parity.md` §3.4.
+    PresignFailed,
+    /// The manifest could not be fetched or presigned, so no asset diff is possible and
+    /// the device re-downloads every asset.
+    ManifestUnavailable,
+    /// A bsdiff patch could not be resolved, so the device downloads the full bundle.
+    PatchUnavailable,
+    /// The device's current bundle row could not be read, so there is nothing to diff
+    /// against.
+    CurrentBundleUnavailable,
+}
+
+impl DegradedReason {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            DegradedReason::PresignFailed => "presign_failed",
+            DegradedReason::ManifestUnavailable => "manifest_unavailable",
+            DegradedReason::PatchUnavailable => "patch_unavailable",
+            DegradedReason::CurrentBundleUnavailable => "current_bundle_unavailable",
+        }
+    }
+}
+
+/// Record that an update-check was served in a reduced form, or failed outright.
+///
+/// Bounded like the others: `app` folds to `unknown`, and `reason` is a closed enum, so
+/// the series count stays a function of the configuration rather than of traffic.
+pub fn record_update_check_degraded(app: &str, reason: DegradedReason) {
+    counter!(
+        METRIC_UPDATE_CHECKS_DEGRADED,
+        "app" => app_label(app),
+        "reason" => reason.as_str(),
+    )
+    .increment(1);
+}
+
 /// Record one update-check decision.
 ///
-/// This is the hook the check handlers should call once they know what they are
-/// returning. Labels are bounded on purpose: `app` is folded to `unknown` unless it is
-/// a configured app, `platform` to `other` unless it is `ios`/`android`. Never pass a
-/// bundle id, app version, fingerprint or cohort here — they are unbounded.
+/// Call this only once the response is known to be servable. `make_response` can fail --
+/// a presign failure is answered with a 500 -- and counting the decision before that
+/// point reports updates no device ever received, which is exactly the reading an
+/// operator takes from this metric during an incident.
+///
+/// Labels are bounded on purpose: `app` is folded to `unknown` unless it is a configured
+/// app, `platform` to `other` unless it is `ios`/`android`. Never pass a bundle id, app
+/// version, fingerprint or cohort here — they are unbounded.
 pub fn record_update_check(app: &str, platform: &str, outcome: UpdateOutcome) {
     counter!(
         METRIC_UPDATE_CHECKS,
@@ -363,6 +417,36 @@ pub fn cors_layer(allowed_origins: &[String]) -> Result<Option<CorsLayer>, Strin
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Every `DegradedReason` must render as a distinct, snake_case, bounded label.
+    ///
+    /// The value of this metric is that an operator can alert on a specific reason, so two
+    /// variants collapsing onto one string -- easy to do when adding a variant by copying
+    /// its neighbour -- would silently merge two different failures into one series.
+    #[test]
+    fn degraded_reasons_are_distinct_bounded_labels() {
+        let all = [
+            DegradedReason::PresignFailed,
+            DegradedReason::ManifestUnavailable,
+            DegradedReason::PatchUnavailable,
+            DegradedReason::CurrentBundleUnavailable,
+        ];
+
+        let labels: Vec<&str> = all.iter().map(|r| r.as_str()).collect();
+        let unique: std::collections::HashSet<&&str> = labels.iter().collect();
+        assert_eq!(
+            unique.len(),
+            labels.len(),
+            "two DegradedReason variants share a label: {labels:?}"
+        );
+
+        for label in labels {
+            assert!(
+                !label.is_empty() && label.chars().all(|c| c.is_ascii_lowercase() || c == '_'),
+                "{label:?} is not a snake_case ASCII label"
+            );
+        }
+    }
 
     #[test]
     fn route_class_is_bounded_and_stable() {

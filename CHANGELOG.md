@@ -28,6 +28,22 @@ All notable changes to this project are documented here. The format follows
   `create_bundles`. Each was previously correct on the grounds that ids were global, which is
   precisely the reasoning this migration invalidates.
 
+### Added
+
+- `ota_update_check_degraded_total{app,reason}` — a counter for every path where an update-check
+  is served in a reduced form or refused outright: `presign_failed`, `manifest_unavailable`,
+  `patch_unavailable`, `current_bundle_unavailable`. These were logged but not measurable, and the
+  degraded ones were invisible: the device still gets a working update and simply re-downloads
+  everything, so a storage backend quietly failing showed up on the bill rather than on a graph.
+
+### Fixed
+
+- **`ota_update_checks_total` counted decisions that were never served.** The counter was
+  incremented beside the decision, before the response was built — and building it can now fail,
+  since a presign failure answers 500 rather than handing the device a null `fileUrl`. During a
+  storage incident the graph would have shown updates shipping normally while every device got
+  nothing. It is recorded after the response is known to be servable.
+
 ### Operators
 
 The migration deletes `bundle_patches` rows whose bundle no longer exists. The foreign keys

@@ -144,6 +144,14 @@ All optional; the defaults are what the server ran with before these existed.
 | `METRICS_ENABLED`       | `true`  | Serve `GET /metrics` in Prometheus text format.                                     |
 | `CORS_ALLOWED_ORIGINS`  | —       | Comma-separated origins, or `*`. Unset sends no CORS headers at all.                |
 
+The counters worth alerting on are `ota_update_check_degraded_total{app,reason}` — every path
+where the server keeps serving after something failed, plus the one where it refuses to. `reason`
+is one of `presign_failed` (the bundle could not be signed, so the request answers 500 rather than
+telling the device to update with nothing to download), `manifest_unavailable` and
+`patch_unavailable` (the update still ships, but the device re-downloads instead of applying a
+diff), and `current_bundle_unavailable`. The degraded cases are otherwise invisible: the device
+gets a working update and you only notice the cost on the storage bill.
+
 `/metrics` is unauthenticated, like `/health` — block it at your reverse proxy or set
 `METRICS_ENABLED=false`. Metric labels are deliberately low-cardinality: routes collapse to a
 fixed set of classes, `app` is restricted to the names in `APPS` (anything else becomes
