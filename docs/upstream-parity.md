@@ -416,6 +416,29 @@ down" are different answers upstream. This server conflated them. Propagating na
 turned every bundle published before the manifest columns existed into a permanent 500 — a total
 outage for those bundles, introduced in the name of compatibility. `read_s3_file_optional` keeps
 the two apart, and `bug_a_missing_manifest_object_was_conflated_with_an_unreadable_one` locks it.
+### 3.8 `enabled` and `shouldForceUpdate` have defaults here and none upstream
+
+Upstream's `v0_31_0` schema declares `channel` with `.defaultTo("production")` and
+`rollout_cohort_count` with `.defaultTo(1000)` — both of which `migrations/20260714000000_init.sql`
+matches — but `enabled` and `should_force_update` are plain `bool(...)` columns with **no default
+at all**. `bundleToRow` passes an omitted field through as `undefined`, so upstream's adapter
+leaves the column out of the insert and the database rejects the row.
+
+This server is more permissive: the columns carry `DEFAULT TRUE` / `DEFAULT FALSE`, and
+`create_bundles` additionally applies `unwrap_or(true)` / `unwrap_or(false)`. A `POST` that omits
+either field succeeds here and fails upstream.
+
+**Kept deliberately.** The stock `hot-updater` CLI always sends both, so this is unreachable
+through it; the exposure is third-party clients, which — since no upstream client calls these
+endpoints at all — is the whole audience. Matching upstream would mean rejecting requests that
+work today, to reproduce a rejection that comes from a missing column default rather than from any
+deliberate contract. The permissive direction cannot corrupt data: both defaults are the value a
+caller omitting the field almost certainly intends.
+
+Recorded rather than fixed so it stays a decision. If the reasoning ever stops holding, the change
+is to drop the two `unwrap_or` calls and let the column defaults stand alone — which still differs
+from upstream, since upstream has no column default either.
+
 ---
 
 ## 4. Procedure for an upstream upgrade

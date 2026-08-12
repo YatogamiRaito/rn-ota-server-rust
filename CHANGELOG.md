@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.3.0] - 2026-08-12
 
 ### Security
 
@@ -71,6 +71,10 @@ All notable changes to this project are documented here. The format follows
   `updateArtifacts.ts` + `makeResponse`) and the CLI API request/response bodies (132 cases). Both
   replay against the real 0.35.12 packages. Fifteen defects between them, all fixed, each with a
   regression lock named after its symptom.
+- Recorded a deviation rather than closing it: `enabled` and `shouldForceUpdate` have column
+  defaults here and none upstream, so a `POST` omitting either succeeds here and is rejected by
+  upstream's database. Unreachable through the stock CLI, which always sends both. See
+  `docs/upstream-parity.md` §3.8.
 - Upstream parity target moved from hot-updater **0.35.8 to 0.35.12**. The only server-side change
   in that range is npm `semver` being replaced with `verkit`, a zero-dependency reimplementation,
   in `plugin-core`'s `semverSatisfies` and in the server's SDK-version header check. The decision
@@ -296,7 +300,8 @@ already applied successfully, so no `_sqlx_migrations` checksum is invalidated b
 - Update-decision and semver-range parity tests generated from the real `@hot-updater/js` and
   `semver` npm packages, verified against hot-updater 0.35.8.
 
-[Unreleased]: https://github.com/YatogamiRaito/rn-ota-server-rust/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/YatogamiRaito/rn-ota-server-rust/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/YatogamiRaito/rn-ota-server-rust/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/YatogamiRaito/rn-ota-server-rust/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/YatogamiRaito/rn-ota-server-rust/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/YatogamiRaito/rn-ota-server-rust/releases/tag/v1.0.0
