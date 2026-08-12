@@ -29,7 +29,7 @@ If you are not already a hot-updater user, start with
 [upstream's documentation](https://gronxb.github.io/hot-updater/) first. Come back here when you
 want to run the server side yourself.
 
-Verified against upstream **hot-updater 0.35.8**. See [docs/upstream-parity.md](docs/upstream-parity.md)
+Verified against upstream **hot-updater 0.35.12**. See [docs/upstream-parity.md](docs/upstream-parity.md)
 for the exact source-to-file mapping and the list of intentional deviations.
 
 ---

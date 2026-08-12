@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Upstream parity target moved from hot-updater **0.35.8 to 0.35.12**. The only server-side change
+  in that range is npm `semver` being replaced with `verkit`, a zero-dependency reimplementation,
+  in `plugin-core`'s `semverSatisfies` and in the server's SDK-version header check. The decision
+  algorithm is byte-identical between the two versions.
+
+  No behaviour changed here, and that is measured rather than assumed: `semver@7.8.5` and
+  `verkit@0.3.2` agree on all 139 recorded semver cases, and regenerating all three fixture files
+  against 0.35.12 produced byte-identical output. `tests/generate_semver_fixtures.mjs` now records
+  `verkit.coerce`, since recording a package upstream no longer uses would pin the wrong ground
+  truth. See `docs/upstream-parity.md` §2.
+
 ## [1.2.0] - 2026-08-12
 
 ### Security

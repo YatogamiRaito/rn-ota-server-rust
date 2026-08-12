@@ -78,7 +78,7 @@ dependency is an exact version, with no `^` or `~` ranges. Bump one deliberately
 upgrade, never incidentally.
 
 `package-lock.json` is **committed on purpose and is part of the parity claim.** It pins the
-transitive tree that produced the checked-in fixtures — including `semver`, whose exact
+transitive tree that produced the checked-in fixtures — including `verkit`, whose exact
 resolution the semver fixtures depend on. Do not delete it and do not add it to `.gitignore`:
 without it, `npm ci` cannot work and a regeneration could quietly record different upstream
 behaviour than the fixtures claim.

@@ -1,10 +1,20 @@
-// Calls the real `semver` npm package and @hot-updater/plugin-core's semverSatisfies
-// wrapper (semverSatisfies(targetAppVersion, currentVersion) =
-// semver.satisfies(semver.coerce(currentVersion).version, targetAppVersion))
-// and records the real input/output pairs. The Rust side's `coerce_version`/`satisfies`
-// (src/semver.rs) is tested against these fixtures (tests/semver_parity_tests.rs).
+// Calls @hot-updater/plugin-core's semverSatisfies wrapper and the semver implementation
+// it is built on, recording the real input/output pairs. The Rust side's
+// `coerce_version`/`satisfies` (src/semver.rs) is tested against these fixtures
+// (tests/semver_parity_tests.rs).
 //
-// Re-run whenever the semver package is upgraded:
+// NOTE on which implementation this records. Up to 0.35.8 upstream used the npm `semver`
+// package: `semverSatisfies(target, current) = semver.satisfies(semver.coerce(current).version,
+// target)`. From 0.35.9 it uses `verkit` instead — a zero-dependency reimplementation — and the
+// call became `satisfies(coerce(current), target)`. The coerce cases below therefore call
+// `verkit.coerce`, because recording a package upstream no longer uses would pin the wrong
+// ground truth. `verkit.coerce` returns a plain string (or null) where `semver.coerce` returned
+// an object, so there is no `.version` to read.
+//
+// The swap was verified to be behaviour-preserving across all 139 cases in this file before the
+// pin moved; if a future upstream change makes them diverge, this file is where it shows up.
+//
+// Re-run whenever the upstream pin moves:
 //   node tests/generate_semver_fixtures.mjs > tests/fixtures/semver_fixtures.json
 
 // Node's ESM resolver ignores NODE_PATH, so a bare `import '@hot-updater/plugin-core'` only
@@ -24,8 +34,7 @@ const { semverSatisfies } = await importUpstream(
   '@hot-updater/plugin-core',
   '@hot-updater/plugin-core/dist/index.mjs',
 );
-// `semver` is CommonJS; a dynamic import of its entry point exposes module.exports as `default`.
-const semver = (await importUpstream('semver', 'semver/index.js')).default;
+const { coerce } = await importUpstream('verkit', 'verkit/dist/index.js');
 
 const satisfiesCases = [];
 const addSatisfies = (description, currentVersion, targetRange, group = 'common') => {
@@ -179,8 +188,9 @@ addSatisfies('coerce: extremely long number (17 digits), unexpected truncation',
 
 const coerceCases = [];
 const addCoerce = (description, input, group = 'common') => {
-  const result = semver.coerce(input);
-  coerceCases.push({ description, input, expected: result ? result.version : null, group });
+  // `verkit.coerce` returns a string, not an object -- see the note at the top of this file.
+  const result = coerce(input);
+  coerceCases.push({ description, input, expected: result ?? null, group });
 };
 
 addCoerce('full version', '1.2.3');

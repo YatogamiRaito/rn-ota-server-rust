@@ -1,6 +1,6 @@
 # Upstream Parity Log — rn-ota-server-rust ↔ hot-updater
 
-> Last verified: **2026-07-29** — upstream version **0.35.8**
+> Last verified: **2026-08-12** — upstream version **0.35.12**
 > This file records which npm packages this server is the Rust counterpart of, what was ported
 > from which source, and how to verify parity when upgrading upstream.
 
@@ -11,7 +11,7 @@
 **It is not a port of a single package.** `@hot-updater/server` is the dominant source for the
 skeleton, but the decision logic and semver behavior come from separate packages. Verified mapping:
 
-| Rust file             | Upstream source (0.35.8)                                       | What was ported                                                                                |
+| Rust file             | Upstream source (0.35.12)                                      | What was ported                                                                                |
 | --------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `src/routes/mod.rs`   | `@hot-updater/server` → `dist/handler.mjs` (`createHandler`)   | Route table: `app-version/*`, `fingerprint/*`, `api/bundles*` — path shapes match exactly       |
 | `src/routes/check.rs` | `@hot-updater/js` → `getUpdateInfo`                            | Update decision: UPDATE / ROLLBACK / UP_TO_DATE, rollout, minBundleId, manifest/patch resolution |
@@ -57,7 +57,50 @@ fixtures. In other words, the parity claim is a tested claim.
 
 ---
 
-## 2. 0.35.1 → 0.35.8 change analysis
+## 2. 0.35.8 → 0.35.12 change analysis
+
+**One change on the server side, and it is a dependency swap: npm `semver` was replaced with
+[`verkit`](https://github.com/sxzz/verkit), a zero-dependency reimplementation.** It lands in
+exactly the two places this project reproduces:
+
+| File | 0.35.8 | 0.35.12 |
+| --- | --- | --- |
+| `@hot-updater/plugin-core` `semverSatisfies` | `semver.satisfies(semver.coerce(v).version, range)` | `satisfies(coerce(v), range)` from `verkit` |
+| `@hot-updater/server` `handler.ts` | `semver.valid` + `semver.gte` | `normalize` + `isGreaterOrEqual` from `verkit` |
+
+**The decision algorithm itself did not change.** The `getUpdateInfo` region of
+`@hot-updater/js` `dist/index.mjs` is identical between the two versions, and so are the counts of
+every construct the port depends on (`isEligibleUpdateCandidate`, `rollbackCandidate`,
+`updateCandidate`, `localeCompare`, `NIL_UUID`, `shouldForceUpdate`). `@hot-updater/core` differs
+only in the version string in its `package.json`.
+
+**The swap is behaviour-preserving, measured rather than assumed.** `semver@7.8.5` and
+`verkit@0.3.2` were run side by side over all 139 recorded cases in
+`tests/fixtures/semver_fixtures.json` — 111 `satisfies`, 28 `coerce` — with zero differences. The
+SDK-header path was checked separately: `verkit.normalize` behaves like `semver.valid`, not like
+`coerce` (`"0.35"` still yields `null`), so the deviation recorded in §3.2 is unchanged rather
+than closed.
+
+Regenerating all three fixture files against 0.35.12 produced **byte-identical output** to the
+files recorded against 0.35.8. That is the strongest available statement: nothing this server
+reproduces behaves differently.
+
+One consequence for the generator: `tests/generate_semver_fixtures.mjs` now records
+`verkit.coerce` rather than `semver.coerce`, because continuing to call a package upstream no
+longer uses would pin the wrong ground truth. `verkit.coerce` returns a plain string where
+`semver.coerce` returned an object.
+
+```bash
+# How this was established
+npm pack @hot-updater/server@0.35.8 && npm pack @hot-updater/server@0.35.12   # + js, plugin-core, core
+diff -rq server-0.35.8 server-0.35.12
+cd tools/fixture-gen && npm ci && cd ../..
+node tests/generate_semver_fixtures.mjs | cmp - tests/fixtures/semver_fixtures.json
+```
+
+---
+
+## 2a. 0.35.1 → 0.35.8 change analysis (historical)
 
 This project pinned 0.35.1 (the lockfile partly resolved 0.35.3). It was upgraded to 0.35.8.
 
@@ -110,7 +153,7 @@ With `minifyEnabled`/`shrinkResources` enabled in release, a rebuild is all that
 
 ---
 
-## 3. Known gaps and deviations (not new issues introduced by 0.35.8)
+## 3. Known gaps and deviations
 
 ### 3.1 `GET /version` reports this server's version
 
@@ -241,6 +284,10 @@ cd ios && pod install
   matching upstream's `resolveFileUrl`-throws behaviour. Verified against the vendored 0.35.8
   sources in `tools/fixture-gen/node_modules/@hot-updater/` and the `v0.35.8` RN client.
 
+- **2026-08-12** — Upstream 0.35.8 → 0.35.12. The only server-side change is npm `semver` being
+  replaced with `verkit`; the decision algorithm is byte-identical. Verified behaviour-preserving
+  by running both implementations over all 139 semver fixture cases (zero differences) and by
+  regenerating all three fixture files against 0.35.12 (byte-identical output). See §2.
 - **2026-07-29** — Upstream 0.35.1 → 0.35.8. The server-side packages
   (`server`/`js`/`plugin-core`/`core`) turned out to be byte-for-byte identical; no Rust change was
   needed. The only changes were in the RN SDK (Brotli proguard keep, `Dispatchers.IO` for
